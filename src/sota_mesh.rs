@@ -380,6 +380,8 @@ pub enum SynthTrack {
     QuantshuffleCanon,
     /// `MEM|8 — The Wave and the Memory` (`432 Hz` + `0.73 Hz` consciousness gate + `69,632` layer shimmer).
     Mem8WaveAndMemory,
+    /// `qMom === Alexandra <3` — Women Empowering, Healing & Pre-Menopause Soothing Sanctuary (`Peter & Chris & Nate`).
+    AlexandraSanctuary,
 }
 
 impl SynthTrack {
@@ -387,6 +389,9 @@ impl SynthTrack {
         match name.to_ascii_lowercase().as_str() {
             "quantshuffle" | "canon" | "edesapa" => Self::QuantshuffleCanon,
             "mem8" | "wave" | "zen" => Self::Mem8WaveAndMemory,
+            "alexandra" | "qmom" | "mom" | "sanctuary" | "soothing" | "healing" => {
+                Self::AlexandraSanctuary
+            }
             _ => Self::FutureWeRemember,
         }
     }
@@ -396,6 +401,9 @@ impl SynthTrack {
             Self::FutureWeRemember => "8bit-Wraith — The Future We Remember (Quant65k+ Master)",
             Self::QuantshuffleCanon => "entheai-radio — Quantshuffle 1-Bit Polyphonic Canon",
             Self::Mem8WaveAndMemory => "MEM|8 — The Wave and the Memory (0.73 Hz + 432 Hz)",
+            Self::AlexandraSanctuary => {
+                "qMom === Alexandra <3 — Women Empowering & Soothing Sanctuary (Peter & Chris & Nate)"
+            }
         }
     }
 }
@@ -508,6 +516,75 @@ pub fn render_wav_track(
                 let gate_073 = 0.65 + 0.35 * (std::f32::consts::TAU * 0.73 * t).sin();
                 let (q65_l, q65_r) = quant65k.sample_realtime_48k(frame_idx, 432.0);
                 (gate_073 * q65_l, gate_073 * q65_r)
+            }
+            SynthTrack::AlexandraSanctuary => {
+                let tau = std::f32::consts::TAU;
+                // 0.10 Hz paced-breathing wave (6 breaths/min, 10s cycle) for deep autonomic calm
+                let breath_wave = 0.62 + 0.38 * (tau * 0.10 * t - std::f32::consts::FRAC_PI_2).sin();
+
+                // Slow chord progression cycling every 8 seconds across warm just-intonation pads
+                let chord_roots: [f32; 4] = [216.0, 172.8, 256.0, 192.0]; // A3(432), F3, C4, G3
+                let root = chord_roots[((t / 8.0) as usize) % chord_roots.len()];
+                let chord_local_t = t % 8.0;
+                // Smooth crossfade envelope on each 8s chord
+                let chord_env = if chord_local_t < 1.5 {
+                    0.5 * (1.0 - (std::f32::consts::PI * chord_local_t / 1.5).cos())
+                } else if chord_local_t > 6.5 {
+                    0.5 * (1.0 + (std::f32::consts::PI * (chord_local_t - 6.5) / 1.5).cos())
+                } else {
+                    1.0
+                };
+
+                // Warm Singing Bowl & Cello Foundation (Root + Fifth + Octave + Major 3rd)
+                let bowl_sub = (tau * (root * 0.5) * t).sin() * 0.26;
+                let pad_root_l = (tau * root * t + 0.15 * (tau * 0.23 * t).sin()).sin() * 0.24;
+                let pad_root_r = (tau * (root + 0.35) * t + 0.15 * (tau * 0.19 * t).cos()).sin() * 0.24;
+                let pad_third = (tau * (root * 1.25) * t).sin() * 0.16 * chord_env;
+                let pad_fifth = (tau * (root * 1.5) * t).sin() * 0.18 * chord_env;
+
+                // Alexandra's Star (432 Hz) & 528 Hz Soothing Harmonic Halo with gentle 6 Hz alpha relaxation warmth
+                let star_432_l = (tau * 432.0 * t).sin() * 0.12 * breath_wave;
+                let star_438_r = (tau * 438.0 * t).sin() * 0.12 * breath_wave;
+                let heal_528 = (tau * 528.0 * t).sin() * 0.08 * (0.5 + 0.5 * (tau * 0.07 * t).cos());
+
+                // Gentle Pentatonic Koto / Harp Water Droplets every 2.5 seconds
+                let harp_notes: [f32; 6] = [432.0, 486.0, 540.0, 648.0, 540.0, 720.0];
+                let note_idx = ((t / 2.5) as usize) % harp_notes.len();
+                let note_t = t % 2.5;
+                let harp_hz = harp_notes[note_idx];
+                let harp_env = (note_t * 25.0).min(1.0) * (-2.2 * note_t).exp();
+                let harp_tone = ((tau * harp_hz * t).sin() + 0.25 * (tau * harp_hz * 2.0 * t).sin())
+                    * harp_env
+                    * 0.14;
+                let harp_pan = 0.5 + 0.35 * ((note_idx as f32) * 1.7).sin();
+
+                // Soft global fade-in (3s) and fade-out (4s)
+                let fade = if t < 3.0 {
+                    0.5 * (1.0 - (std::f32::consts::PI * t / 3.0).cos())
+                } else if t > (duration_seconds - 4.0).max(3.1) {
+                    let rem = (duration_seconds - t).max(0.0);
+                    0.5 * (1.0 - (std::f32::consts::PI * rem / 4.0).cos())
+                } else {
+                    1.0
+                };
+
+                let l = fade
+                    * (bowl_sub
+                        + pad_root_l
+                        + pad_third * 0.8
+                        + pad_fifth
+                        + star_432_l
+                        + heal_528 * 0.7
+                        + harp_tone * (1.0 - harp_pan));
+                let r = fade
+                    * (bowl_sub
+                        + pad_root_r
+                        + pad_third
+                        + pad_fifth * 0.8
+                        + star_438_r
+                        + heal_528
+                        + harp_tone * harp_pan);
+                (l, r)
             }
         };
 
