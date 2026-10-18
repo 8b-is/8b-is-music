@@ -1,0 +1,33 @@
+[package]
+name = "eight-b-is-music"
+version = "0.1.0"
+edition = "2021"
+authors = ["Peter Lódri <peter@vaked.dev>", "8b-is Constellation <cabotage@pm.me>"]
+license = "MIT"
+description = "8b-is-music — Sovereign Rust Audio & Synthesis Engine wiring ALL SOTA 8b-is repos (wupz, qwave, liquid-rust, qultrakotoro, 8b-is-engine, 8b-is-sota, entheai-quantum, entheai-radio, kompress-ultra) with Multi-Bluetooth CoreAudio routing and Quant65k+ (65,536+) ternary wave layers."
+repository = "https://github.com/8b-is/8b-is-music"
+
+[lib]
+name = "eight_b_is_music"
+path = "src/lib.rs"
+
+[[bin]]
+name = "8b-is-music"
+path = "src/main.rs"
+
+[dependencies]
+# Direct SOTA 8b-is workspace crates
+wupz-core = { path = "../wupz/wupz-rs" }
+qwave-core = { path = "../qwave/core" }
+admissibility = { path = "../8b-is-engine/crates/admissibility" }
+spherepop = { path = "../8b-is-engine/crates/spherepop" }
+ultrawild = { path = "../8b-is-engine/crates/ultrawild" }
+qdecorators = { path = "../8b-is-engine/crates/qdecorators", default-features = false }
+ternary-lane = { path = "../8b-is-engine/crates/ternary" }
+entheai-quantum = { path = "../entheai/crates/quantum" }
+entheai-radio = { path = "../entheai/crates/radio", default-features = false }
+
+# Serialization & hashing
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.10"
