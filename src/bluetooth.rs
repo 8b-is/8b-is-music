@@ -230,7 +230,7 @@ impl MultiBluetoothRouter {
                 mac_or_uid: "00-7f-1d-7f-8d-35".to_string(),
                 transport: AudioTransport::BluetoothA2dpAac,
                 role: SpatialChannelRole::RoomSubAnchor,
-                connected: all_active,
+                connected: true,
                 sample_rate_hz: 48_000,
                 master_volume_scalar: 1.0,
                 stereo_pan: 0.5,

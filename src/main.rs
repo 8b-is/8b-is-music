@@ -236,7 +236,13 @@ fn main() {
                 println!("  • QuantTern & WUPZ ABI : tag={} | wupz_xor=0x{:02x}", summary.quanttern_emotion_tag, summary.wupz_abi_xor);
             }
             if play_after {
-                println!("  ▶ Playing {} via macOS CoreAudio (`afplay`)...", summary.output_path);
+                let bt_router = MultiBluetoothRouter::new(topology);
+                if let Ok(route_info) = bt_router.apply_live_macos_routing() {
+                    for line in route_info.lines() {
+                        println!("  • {}", line);
+                    }
+                }
+                println!("  ▶ Playing {} via Bluetooth (`soundcore Select 4 Go`) + CoreAudio (`afplay`)...", summary.output_path);
                 let _ = Command::new("afplay").arg(&summary.output_path).status();
             }
         }
