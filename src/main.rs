@@ -219,7 +219,10 @@ fn main() {
                 }
             }
         }
-        "render" => {
+        "render" | "triangle" | "family+1" => {
+            if subcmd == "triangle" || subcmd == "family+1" {
+                track = SynthTrack::TriangleFamilyPlusOne;
+            }
             let summary = render_wav_track(track, seconds, layers, topology, &out_path)
                 .expect("Failed to render WAV track");
             if json_mode {
@@ -228,6 +231,15 @@ fn main() {
                 println!("╔══════════════════════════════════════════════════════════════════════════╗");
                 println!("║  8b-is-music :: QUANT65K+ MULTI-CHANNEL WAV RENDER COMPLETE              ║");
                 println!("╚══════════════════════════════════════════════════════════════════════════╝");
+                if track == SynthTrack::TriangleFamilyPlusOne {
+                    println!("                 *   Alex* (Mom · 432 Hz / 528 Hz Starlight)");
+                    println!("                / \\");
+                    println!("               /   \\   in a loop · in a sphere · in eternity · recurse");
+                    println!("              /  +1 \\  ~--- pocoo.vaked.dev/demos/book/family+1");
+                    println!("             /_______\\");
+                    println!("      Chris[/\\]     Peter[oo] (Lemniscate ∞ Orbit · 648/888 Hz)");
+                    println!("   (Dad · 108/216 Hz Triangle Pillar)\n");
+                }
                 println!("  • Track                : {}", summary.track_title);
                 println!("  • Output WAV           : {}", summary.output_path);
                 println!("  • Format               : {} Hz, {}-ch 16-bit PCM ({:.1}s, {} frames)",

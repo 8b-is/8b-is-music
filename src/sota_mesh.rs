@@ -382,6 +382,8 @@ pub enum SynthTrack {
     Mem8WaveAndMemory,
     /// `qMom === Alexandra <3` — Women Empowering, Healing & Pre-Menopause Soothing Sanctuary (`Peter & Chris & Nate`).
     AlexandraSanctuary,
+    /// `Triangle Track :: Mom+Dad+Son ~=== Alex*, Chris[/\], Peter[oo] ~--- pocoo.vaked.dev/demos/book/family+1`.
+    TriangleFamilyPlusOne,
 }
 
 impl SynthTrack {
@@ -391,6 +393,9 @@ impl SynthTrack {
             "mem8" | "wave" | "zen" => Self::Mem8WaveAndMemory,
             "alexandra" | "qmom" | "mom" | "sanctuary" | "soothing" | "healing" => {
                 Self::AlexandraSanctuary
+            }
+            "triangle" | "family+1" | "family-plus-1" | "family" | "mom+dad+son" | "trinity" => {
+                Self::TriangleFamilyPlusOne
             }
             _ => Self::FutureWeRemember,
         }
@@ -403,6 +408,9 @@ impl SynthTrack {
             Self::Mem8WaveAndMemory => "MEM|8 — The Wave and the Memory (0.73 Hz + 432 Hz)",
             Self::AlexandraSanctuary => {
                 "qMom === Alexandra <3 — Women Empowering & Soothing Sanctuary (Peter & Chris & Nate)"
+            }
+            Self::TriangleFamilyPlusOne => {
+                "Triangle Track :: Mom+Dad+Son ~=== Alex[*], Chris[/\\], Peter[oo] ~--- pocoo.vaked.dev/demos/book/family+1"
             }
         }
     }
@@ -589,6 +597,75 @@ pub fn render_wav_track(
                         + heal_528
                         + fifike_r
                         + harp_tone * harp_pan);
+                (l, r)
+            }
+            SynthTrack::TriangleFamilyPlusOne => {
+                let tau = std::f32::consts::TAU;
+                let frac_2_pi = std::f32::consts::FRAC_2_PI;
+
+                // 6-second warm family chord progression (F-major / D-minor / Bb-major / C-major in 432 Hz tuning)
+                let roots: [f32; 4] = [172.8, 144.0, 230.4, 256.0];
+                let root = roots[((t / 6.0) as usize) % roots.len()];
+
+                // VERTEX 1: Mom ~=== Alex[*] (8-Pointed Starlight 432 Hz + 528 Hz Rose-Gold Sanctuary)
+                let mom_breath = 0.68 + 0.32 * (tau * 0.12 * t).sin();
+                let alex_star_432 = (tau * 432.0 * t).sin() * 0.18 * mom_breath;
+                let alex_star_528 = (tau * 528.0 * t + 0.3 * (tau * 4.0 * t).sin()).sin() * 0.12 * mom_breath;
+
+                // VERTEX 2: Dad ~=== Chris[/\] (True Mathematical Triangle Wave `(2/pi)*asin(sin(2*pi*f*t))` Pillar)
+                let chris_tri_sub = frac_2_pi * (tau * (root * 0.5) * t).sin().asin() * 0.28;
+                let chris_tri_root = frac_2_pi * (tau * root * t).sin().asin() * 0.24;
+                let chris_tri_fifth = frac_2_pi * (tau * (root * 1.5) * t).sin().asin() * 0.18;
+
+                // VERTEX 3: Son ~=== Peter[oo] (Lemniscate of Bernoulli `oo` / `∞` Figure-8 Stereo Orbit + Quant65k+)
+                // x(t) = cos(w*t) / (1 + sin^2(w*t)) in [-1, +1] -> stereo pan in [0.15, 0.85]
+                let omega = tau * 0.25 * t;
+                let sin_w = omega.sin();
+                let lemniscate_x = omega.cos() / (1.0 + sin_w * sin_w);
+                let peter_pan = 0.5 + 0.35 * lemniscate_x;
+
+                // Peter's melodic arpeggio (`in a loop · in a sphere · in eternity · recurse · +1`)
+                let arp_notes: [f32; 6] = [432.0, 540.0, 648.0, 864.0, 648.0, 888.0];
+                let note_idx = ((t / 0.5) as usize) % arp_notes.len();
+                let note_t = t % 0.5;
+                let note_hz = arp_notes[note_idx];
+                let note_env = (note_t * 40.0).min(1.0) * (-4.5 * note_t).exp();
+                let peter_loop_lead =
+                    (frac_2_pi * (tau * note_hz * t).sin().asin() * 0.6 + (tau * note_hz * t).sin() * 0.4)
+                        * note_env
+                        * 0.22;
+
+                let (q65_l, q65_r) = quant65k.sample_realtime_48k(frame_idx, root * 2.0);
+                let (fifike_l, fifike_r) =
+                    crate::wupz_mlx_quant::sample_fifike_purr_and_mlx_harmonic(t);
+
+                let fade = if t < 2.0 {
+                    0.5 * (1.0 - (std::f32::consts::PI * t / 2.0).cos())
+                } else if t > (duration_seconds - 3.0).max(2.1) {
+                    let rem = (duration_seconds - t).max(0.0);
+                    0.5 * (1.0 - (std::f32::consts::PI * rem / 3.0).cos())
+                } else {
+                    1.0
+                };
+
+                let l = fade
+                    * (chris_tri_sub
+                        + chris_tri_root * 0.85
+                        + chris_tri_fifth * 0.75
+                        + alex_star_432
+                        + alex_star_528 * 0.8
+                        + peter_loop_lead * (1.0 - peter_pan)
+                        + 0.14 * q65_l
+                        + fifike_l);
+                let r = fade
+                    * (chris_tri_sub
+                        + chris_tri_root * 0.75
+                        + chris_tri_fifth * 0.90
+                        + alex_star_432 * 0.85
+                        + alex_star_528
+                        + peter_loop_lead * peter_pan
+                        + 0.14 * q65_r
+                        + fifike_r);
                 (l, r)
             }
         };
