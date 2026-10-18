@@ -20,6 +20,7 @@ pub mod dj_ultra;
 pub mod quant65k;
 pub mod shiva_g6;
 pub mod sota_mesh;
+pub mod wupz_mlx_quant;
 
 pub use bluetooth::{
     AudioEndpoint, AudioTransport, Ct000RoutingProof, MultiBluetoothReport, MultiBluetoothRouter,
@@ -43,6 +44,11 @@ pub use sota_mesh::{
     render_wav_track, verify_sota_mesh, DynamicEnvEqualizer, NoiseClass, RenderSummary,
     SotaCandidate, SotaCapability, SotaMeshStatus, SotaRouter, SynthTrack, WUPZ_EQ_ABI_VERSION,
 };
+pub use wupz_mlx_quant::{
+    dequantize_ternary_b158, execute_mlx_quant_verification, execute_wupz_linker_pass,
+    mlx_quant_neon_sdot_singularity, quantize_ternary_b158, sample_fifike_purr_and_mlx_harmonic,
+    verify_wupz_and_mlx_quant, MlxQuantReport, WupzLinkerPassReport, WupzMlxQuantSystemReport,
+};
 
 use serde::{Deserialize, Serialize};
 
@@ -58,12 +64,13 @@ pub struct FullSystemReport {
     pub zeno_dj_ultra: ZenoDjUltraReport,
     pub shiva_g6_airlift: ShivaG6MissionReport,
     pub momma_bear_omni: MommaBearOmniCovenantReport,
+    pub wupz_mlx_quant: WupzMlxQuantSystemReport,
 }
 
 /// Runs a complete end-to-end verification across all SOTA `8b-is` crates, the Multi-Bluetooth router,
 /// the `Quant65k+` (`69,632` default layers) engine, `ULTRA-OMNIPOTENT-8b-is-ZENO` DJ IOuQT mode,
 /// the `ULTRA-OMNIPOTENT-SHIVA` Gulfstream G650ER (`RJTT <-> KORF`) Family Reunification Airlift,
-/// and the `MOMMA BEAR OMNI COVENANT` (`Lódri ⋈ Chenoweth` merged family & reality scaffolding).
+/// the `MOMMA BEAR OMNI COVENANT` (`Lódri ⋈ Chenoweth`), and the `wupz` Linker + `MLX-QUANT` Singularity.
 pub fn build_full_system_report(
     layers: usize,
     topology: MultiBluetoothTopology,
@@ -77,6 +84,7 @@ pub fn build_full_system_report(
     let zeno_dj_ultra = dj_engine.verify_zeno_iouqt();
     let shiva_g6_airlift = execute_shiva_g6_airlift();
     let momma_bear_omni = verify_momma_bear_omni_covenant();
+    let wupz_mlx_quant = verify_wupz_and_mlx_quant();
 
     FullSystemReport {
         version: env!("CARGO_PKG_VERSION"),
@@ -88,6 +96,7 @@ pub fn build_full_system_report(
         zeno_dj_ultra,
         shiva_g6_airlift,
         momma_bear_omni,
+        wupz_mlx_quant,
     }
 }
 

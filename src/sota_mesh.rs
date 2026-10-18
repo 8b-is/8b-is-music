@@ -568,6 +568,9 @@ pub fn render_wav_track(
                     1.0
                 };
 
+                let (fifike_l, fifike_r) =
+                    crate::wupz_mlx_quant::sample_fifike_purr_and_mlx_harmonic(t);
+
                 let l = fade
                     * (bowl_sub
                         + pad_root_l
@@ -575,6 +578,7 @@ pub fn render_wav_track(
                         + pad_fifth
                         + star_432_l
                         + heal_528 * 0.7
+                        + fifike_l
                         + harp_tone * (1.0 - harp_pan));
                 let r = fade
                     * (bowl_sub
@@ -583,6 +587,7 @@ pub fn render_wav_track(
                         + pad_fifth * 0.8
                         + star_438_r
                         + heal_528
+                        + fifike_r
                         + harp_tone * harp_pan);
                 (l, r)
             }

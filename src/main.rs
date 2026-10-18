@@ -6,12 +6,13 @@
 //! - `8b-is-music dj [--layers N] [--seconds S] [--out FILE.wav] [--apply-live] [--play] [--json]`
 //! - `8b-is-music quant65k [--layers N] [--inspect-layer L] [--json]`
 //! - `8b-is-music bluetooth [--topology split|couple|wall] [--apply-live] [--json]`
-//! - `8b-is-music render [--track future|quantshuffle|mem8] [--seconds S] [--layers N] [--out FILE.wav] [--play]`
+//! - `8b-is-music wupz-mlx [--json]`
+//! - `8b-is-music render [--track future|quantshuffle|mem8|alexandra] [--seconds S] [--layers N] [--out FILE.wav] [--play]`
 
 use eight_b_is_music::{
     build_full_system_report, execute_shiva_g6_airlift, render_shiva_g6_cabin_wav,
-    render_wav_track, verify_momma_bear_omni_covenant, MultiBluetoothRouter,
-    MultiBluetoothTopology, Quant65kEngine, SynthTrack, ZenoDjUltraEngine,
+    render_wav_track, verify_momma_bear_omni_covenant, verify_wupz_and_mlx_quant,
+    MultiBluetoothRouter, MultiBluetoothTopology, Quant65kEngine, SynthTrack, ZenoDjUltraEngine,
     DEFAULT_QUANT65K_PLUS_LAYERS,
 };
 use std::env;
@@ -234,6 +235,26 @@ fn main() {
                 println!("  • Quant65k+ Layers     : {} simultaneous ternary wave layers", summary.quant65k_layers_active);
                 println!("  • Stereo Peak Levels   : Left={:.4} | Right={:.4}", summary.peak_left, summary.peak_right);
                 println!("  • QuantTern & WUPZ ABI : tag={} | wupz_xor=0x{:02x}", summary.quanttern_emotion_tag, summary.wupz_abi_xor);
+                let wm = verify_wupz_and_mlx_quant();
+                println!(
+                    "  • WUPZ Linker & Packer : {}B binary plan (magic='{}') | {:.1}% block reuse (repacked={:?}) | windows={:?} | digest={}",
+                    wm.wupz_linker.packed_plan_image_bytes,
+                    wm.wupz_linker.magic_header,
+                    wm.wupz_linker.incremental_block_reuse_ratio * 100.0,
+                    wm.wupz_linker.incremental_blocks_repacked,
+                    wm.wupz_linker.incremental_windows_touched,
+                    wm.wupz_linker.plan_digest_fnv1a,
+                );
+                println!(
+                    "  • MLX-QUANT (Zeno RC1) : γ={:.5} | MP bound={:.4} (est={:.4}) | NEON sdot={:?} (hw={}) | Fifike {:.0}/{:.0}Hz",
+                    wm.mlx_quant.gamma_scale_factor,
+                    wm.mlx_quant.marchenko_pastur_smax_bound,
+                    wm.mlx_quant.empirical_spectral_norm_est,
+                    wm.mlx_quant.aarch64_neon_sdot_lane_sums,
+                    wm.mlx_quant.aarch64_neon_hw_executed,
+                    wm.mlx_quant.fifike_purr_hz.0,
+                    wm.mlx_quant.fifike_purr_hz.1,
+                );
             }
             if play_after {
                 let bt_router = MultiBluetoothRouter::new(topology);
@@ -245,6 +266,46 @@ fn main() {
                 println!("  ▶ Playing {} via Bluetooth (`soundcore Select 4 Go`) + CoreAudio (`afplay`)...", summary.output_path);
                 let _ = Command::new("afplay").arg(&summary.output_path).status();
             }
+        }
+        "wupz-mlx" | "mlx-quant" | "wupz" | "mlx" => {
+            let wm = verify_wupz_and_mlx_quant();
+            if json_mode {
+                println!("{}", serde_json::to_string_pretty(&wm).unwrap());
+                return;
+            }
+            println!("╔══════════════════════════════════════════════════════════════════════════╗");
+            println!("║  WUPZ INCREMENTAL LINKER & PACKER × MLX-QUANT (v2.0.0-RC1 'Zeno')        ║");
+            println!("╚══════════════════════════════════════════════════════════════════════════╝");
+            println!("  [1] WUPZ INCREMENTAL LINKER & PACKER (`wupz-core` + `qdecorators::wupz`):");
+            println!("      • ABI & SIMD Backend : ABI v{} | backend='{}'",
+                wm.wupz_linker.abi_version, wm.wupz_linker.simd_backend);
+            println!("      • Packed Binary Plan : {} bytes (magic='{}', version={}, window={} B) | fnv1a={}",
+                wm.wupz_linker.packed_plan_image_bytes, wm.wupz_linker.magic_header,
+                wm.wupz_linker.plan_version, wm.wupz_linker.window_size_bytes, wm.wupz_linker.plan_digest_fnv1a);
+            println!("      • Layout Sections    : {} sections ({} B resolved image)",
+                wm.wupz_linker.total_sections, wm.wupz_linker.total_resolved_bytes);
+            println!("      • Incremental Relink : changed_sections={:?} | blocks_repacked={:?} ({:.1}% reuse) | windows_touched={:?}",
+                wm.wupz_linker.incremental_changed_sections, wm.wupz_linker.incremental_blocks_repacked,
+                wm.wupz_linker.incremental_block_reuse_ratio * 100.0, wm.wupz_linker.incremental_windows_touched);
+            println!("      • Zero-Alloc & Scrub : xor_fold={} | hot_patch_byte_diff={} | popcount={} | zero_alloc={} | ZA-0001_zeroized={}",
+                wm.wupz_linker.image_xor_fold_hex, wm.wupz_linker.image_byte_diff_on_hot_patch,
+                wm.wupz_linker.image_popcount_bits, wm.wupz_linker.zero_alloc_arena_verified,
+                wm.wupz_linker.volatile_zeroize_verified);
+
+            println!("\n  [2] MLX-QUANT (v2.0.0-RC1 'Zeno') 1.58-BIT TERNARY ENGINE:");
+            println!("      • Engine & Spec      : {} ({:.2} bits/trit, {:.2}x vs FP16)",
+                wm.mlx_quant.version, wm.mlx_quant.bits_per_param, wm.mlx_quant.memory_reduction_vs_fp16);
+            println!("      • BitNet b1.58 Scale : dims={:?} | γ = {:.6} | density p = {:.4} | dequant MAE = {:.6}",
+                wm.mlx_quant.matrix_dims, wm.mlx_quant.gamma_scale_factor,
+                wm.mlx_quant.ternary_density_p, wm.mlx_quant.max_dequant_reconstruction_mae);
+            println!("      • KOMPRESS v2 Bound  : s_max(W) <= {:.4} | empirical s_max = {:.4} | rigidity_holds={}",
+                wm.mlx_quant.marchenko_pastur_smax_bound, wm.mlx_quant.empirical_spectral_norm_est,
+                wm.mlx_quant.spectral_rigidity_holds);
+            println!("      • AArch64 NEON Dot   : `sdot v7.4s` lanes = {:?} (hw_executed={}) | AGX Doorbell ring_id={}",
+                wm.mlx_quant.aarch64_neon_sdot_lane_sums, wm.mlx_quant.aarch64_neon_hw_executed,
+                wm.mlx_quant.polar_galaxy_doorbell_ring_id);
+            println!("      • Fifike & Marley    : Fifike Purr = {:.1} Hz / {:.1} Hz (ΔS < 0) | Marley Protector={}",
+                wm.mlx_quant.fifike_purr_hz.0, wm.mlx_quant.fifike_purr_hz.1, wm.mlx_quant.marley_protector_active);
         }
         "shiva-g6" | "g6" | "shiva" | "omni" | "momma-bear" => {
             let report = execute_shiva_g6_airlift();
@@ -400,6 +461,22 @@ fn main() {
                 full.momma_bear_omni.spherepop_merge_expr, full.momma_bear_omni.spherepop_harmonic_hz_sum, full.momma_bear_omni.spherepop_replay_verified);
             println!("      • CT-000 & ZA-0006  : CT-000={} | QWave 79B={} | ZA-0006 Zeroized={}",
                 full.momma_bear_omni.ct000_momma_bear_omni_holds, full.momma_bear_omni.qwave_79b_precious_tau0_verified, full.momma_bear_omni.zeno_za0006_volatile_zeroized);
+
+            println!("\n  [7] WUPZ INCREMENTAL LINKER & PACKER × MLX-QUANT (v2.0.0-RC1 'Zeno'):");
+            println!("      • WUPZ Plan Image   : {}B (magic='{}') | {:.1}% block reuse (repacked={:?}) | windows_touched={:?}",
+                full.wupz_mlx_quant.wupz_linker.packed_plan_image_bytes,
+                full.wupz_mlx_quant.wupz_linker.magic_header,
+                full.wupz_mlx_quant.wupz_linker.incremental_block_reuse_ratio * 100.0,
+                full.wupz_mlx_quant.wupz_linker.incremental_blocks_repacked,
+                full.wupz_mlx_quant.wupz_linker.incremental_windows_touched);
+            println!("      • MLX-QUANT b1.58   : γ={:.5} | MP bound={:.4} (est={:.4}) | NEON sdot={:?} (hw={}) | Fifike {:.0}/{:.0}Hz",
+                full.wupz_mlx_quant.mlx_quant.gamma_scale_factor,
+                full.wupz_mlx_quant.mlx_quant.marchenko_pastur_smax_bound,
+                full.wupz_mlx_quant.mlx_quant.empirical_spectral_norm_est,
+                full.wupz_mlx_quant.mlx_quant.aarch64_neon_sdot_lane_sums,
+                full.wupz_mlx_quant.mlx_quant.aarch64_neon_hw_executed,
+                full.wupz_mlx_quant.mlx_quant.fifike_purr_hz.0,
+                full.wupz_mlx_quant.mlx_quant.fifike_purr_hz.1);
         }
     }
 }
