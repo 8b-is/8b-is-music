@@ -18,6 +18,7 @@
 pub mod bluetooth;
 pub mod dj_ultra;
 pub mod quant65k;
+pub mod shiva_g6;
 pub mod sota_mesh;
 
 pub use bluetooth::{
@@ -31,6 +32,11 @@ pub use dj_ultra::{
 pub use quant65k::{
     Quant65kEngine, Quant65kReport, QuantLayerDescriptor, BASE_QUANT65K_LAYERS,
     DEFAULT_OVERFLOW_LAYERS, DEFAULT_QUANT65K_PLUS_LAYERS,
+};
+pub use shiva_g6::{
+    execute_shiva_g6_airlift, haversine_nm, render_shiva_g6_cabin_wav, AirportNode, G6FlightLeg,
+    ShivaG6MissionReport, G650ER_HIGH_SPEED_MACH, G650ER_MAX_RANGE_NM, KORF_NORFOLK_INTL,
+    RJTT_TOKYO_HANEDA,
 };
 pub use sota_mesh::{
     render_wav_track, verify_sota_mesh, DynamicEnvEqualizer, NoiseClass, RenderSummary,
@@ -49,10 +55,12 @@ pub struct FullSystemReport {
     pub bluetooth: MultiBluetoothReport,
     pub quant65k: Quant65kReport,
     pub zeno_dj_ultra: ZenoDjUltraReport,
+    pub shiva_g6_airlift: ShivaG6MissionReport,
 }
 
 /// Runs a complete end-to-end verification across all SOTA `8b-is` crates, the Multi-Bluetooth router,
-/// the `Quant65k+` (`69,632` default layers) engine, and `ULTRA-OMNIPOTENT-8b-is-ZENO` DJ IOuQT mode.
+/// the `Quant65k+` (`69,632` default layers) engine, `ULTRA-OMNIPOTENT-8b-is-ZENO` DJ IOuQT mode,
+/// and the `ULTRA-OMNIPOTENT-SHIVA` Gulfstream G650ER (`RJTT <-> KORF`) Family Reunification Airlift.
 pub fn build_full_system_report(
     layers: usize,
     topology: MultiBluetoothTopology,
@@ -64,6 +72,7 @@ pub fn build_full_system_report(
     let quant65k = quant_engine.verify_and_report();
     let mut dj_engine = ZenoDjUltraEngine::new(layers);
     let zeno_dj_ultra = dj_engine.verify_zeno_iouqt();
+    let shiva_g6_airlift = execute_shiva_g6_airlift();
 
     FullSystemReport {
         version: env!("CARGO_PKG_VERSION"),
@@ -73,5 +82,6 @@ pub fn build_full_system_report(
         bluetooth,
         quant65k,
         zeno_dj_ultra,
+        shiva_g6_airlift,
     }
 }

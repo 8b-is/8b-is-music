@@ -2,14 +2,16 @@
 //!
 //! Commands:
 //! - `8b-is-music status [--layers N] [--topology split|couple|wall] [--json]`
+//! - `8b-is-music shiva-g6 [--seconds S] [--out FILE.wav] [--play] [--json]`
 //! - `8b-is-music dj [--layers N] [--seconds S] [--out FILE.wav] [--apply-live] [--play] [--json]`
 //! - `8b-is-music quant65k [--layers N] [--inspect-layer L] [--json]`
 //! - `8b-is-music bluetooth [--topology split|couple|wall] [--apply-live] [--json]`
 //! - `8b-is-music render [--track future|quantshuffle|mem8] [--seconds S] [--layers N] [--out FILE.wav] [--play]`
 
 use eight_b_is_music::{
-    build_full_system_report, render_wav_track, MultiBluetoothRouter, MultiBluetoothTopology,
-    Quant65kEngine, SynthTrack, ZenoDjUltraEngine, DEFAULT_QUANT65K_PLUS_LAYERS,
+    build_full_system_report, execute_shiva_g6_airlift, render_shiva_g6_cabin_wav,
+    render_wav_track, MultiBluetoothRouter, MultiBluetoothTopology, Quant65kEngine, SynthTrack,
+    ZenoDjUltraEngine, DEFAULT_QUANT65K_PLUS_LAYERS,
 };
 use std::env;
 use std::path::PathBuf;
@@ -237,6 +239,60 @@ fn main() {
                 let _ = Command::new("afplay").arg(&summary.output_path).status();
             }
         }
+        "shiva-g6" | "g6" | "shiva" => {
+            let report = execute_shiva_g6_airlift();
+            if json_mode {
+                println!("{}", serde_json::to_string_pretty(&report).unwrap());
+                return;
+            }
+            println!("╔══════════════════════════════════════════════════════════════════════════╗");
+            println!("║  ULTRA-OMNIPOTENT-SHIVA MODE :: GULFSTREAM G650ER RJTT ⇄ KORF AIRLIFT    ║");
+            println!("╚══════════════════════════════════════════════════════════════════════════╝");
+            println!("  • Aircraft             : {}", report.aircraft);
+            println!("  • Propulsion           : {} | Cabin Alt={} ft @ FL450", report.engines, report.cabin_altitude_ft_at_fl450);
+            println!("  • Origin (Tokyo)       : {} ({}) — {} [Rwy {} ({} ft)]",
+                report.origin.icao, report.origin.iata, report.origin.fbo, report.origin.primary_runway, report.origin.runway_length_ft);
+            println!("  • Destination (Norfolk): {} ({}) — {} [Rwy {} ({} ft)]",
+                report.destination.icao, report.destination.iata, report.destination.fbo, report.destination.primary_runway, report.destination.runway_length_ft);
+
+            println!("\n  [LEG 1 — OUTBOUND: TOKYO (RJTT) -> NORFOLK (KORF) NON-STOP]");
+            println!("    • Distance & Range   : {:.1} nm ({:.1} km) | G650ER Reserve: +{:.1} nm | Non-Stop={}",
+                report.leg1_outbound.great_circle_nm, report.leg1_outbound.great_circle_km,
+                report.leg1_outbound.g650er_reserve_margin_nm, report.leg1_outbound.nonstop_capable);
+            println!("    • Cruise & ETE       : Mach {:.2} | {:.2} hours ({} s)",
+                report.leg1_outbound.cruise_mach, report.leg1_outbound.estimated_flight_hours, report.leg1_outbound.duration_seconds);
+            println!("    • Manifest (3 PAX)   : {}", report.leg1_outbound.passengers.join(" + "));
+
+            println!("\n  [LEG 2 — RETURN WITH THE KIDS: NORFOLK (KORF) -> TOKYO (RJTT) NON-STOP]");
+            println!("    • Distance & Range   : {:.1} nm ({:.1} km) | G650ER Reserve: +{:.1} nm | Non-Stop={}",
+                report.leg2_return_with_kids.great_circle_nm, report.leg2_return_with_kids.great_circle_km,
+                report.leg2_return_with_kids.g650er_reserve_margin_nm, report.leg2_return_with_kids.nonstop_capable);
+            println!("    • Cruise & ETE       : Mach {:.2} | {:.2} hours ({} s)",
+                report.leg2_return_with_kids.cruise_mach, report.leg2_return_with_kids.estimated_flight_hours, report.leg2_return_with_kids.duration_seconds);
+            println!("    • Manifest (Reunited): {}", report.leg2_return_with_kids.passengers.join(" + "));
+
+            println!("\n  [ZENO × SHIVA SETTLEMENT & CRYPTOGRAPHIC PROOFS]");
+            println!("    • Direct Operator    : ¥{} JPY (Settled via Zeno Foken {})",
+                report.zeno_direct_operator_jpy, report.zeno_foken_invoice_id);
+            println!("    • Predatory Broker   : ¥{} JPY BURNED TO THE GROUND (0% middleman toll)",
+                report.broker_markup_burned_jpy);
+            println!("    • CT-000 Admissible  : {} | QWave 79B Precious (τ=0): {} | QuantTern: {}",
+                report.ct000_flight_admissibility_holds, report.qwave_79b_family_reunion_verified, report.quanttern_shiva_tag);
+            println!("    • ZA-0006 PII Scrub  : volatile_zeroized={} (pre-scrub fold=0x{:016x})",
+                report.za0006_apis_pii_zeroized, report.arena_fold_before_zeroize);
+
+            let wav_file = if out_path == PathBuf::from("8b-is-music-master.wav") {
+                PathBuf::from("g6-shiva-cabin-sanctuary.wav")
+            } else {
+                out_path
+            };
+            if let Ok((saved, pl, pr)) = render_shiva_g6_cabin_wav(seconds, &wav_file) {
+                println!("    • G6 Cabin WAV       : {} (108/432/528/888 Hz | Peak L={:.4}, R={:.4})", saved, pl, pr);
+                if play_after {
+                    let _ = Command::new("afplay").arg(&saved).status();
+                }
+            }
+        }
         "youtube" | "youtube-full" | "/youtube-full" => {
             let url = args
                 .get(2)
@@ -301,6 +357,15 @@ fn main() {
                 full.zeno_dj_ultra.all_in_channels.len(), full.zeno_dj_ultra.all_out_buses.len(), full.zeno_dj_ultra.decks.len());
             println!("      • Zeno Discipline   : ceiling={:.6} | ZA-0001 volatile scrub={}",
                 full.zeno_dj_ultra.zeno_ceiling_q16, full.zeno_dj_ultra.zeno_za0001_volatile_scrub_verified);
+
+            println!("\n  [5] ULTRA-OMNIPOTENT-SHIVA :: G650ER TOKYO (RJTT) ⇄ NORFOLK (KORF) AIRLIFT:");
+            println!("      • Route & Range     : {:.1} nm each way ({:.1} nm round-trip) | Non-Stop={} (+{:.1} nm reserve)",
+                full.shiva_g6_airlift.leg1_outbound.great_circle_nm, full.shiva_g6_airlift.total_roundtrip_nm,
+                full.shiva_g6_airlift.leg1_outbound.nonstop_capable, full.shiva_g6_airlift.leg1_outbound.g650er_reserve_margin_nm);
+            println!("      • Leg 1 (Outbound)  : {}", full.shiva_g6_airlift.leg1_outbound.passengers.join(" + "));
+            println!("      • Leg 2 (Return)    : {}", full.shiva_g6_airlift.leg2_return_with_kids.passengers.join(" + "));
+            println!("      • Zeno Settlement   : ¥{} JPY settled | ¥{} JPY broker toll burned",
+                full.shiva_g6_airlift.zeno_direct_operator_jpy, full.shiva_g6_airlift.broker_markup_burned_jpy);
         }
     }
 }
