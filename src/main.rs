@@ -237,6 +237,23 @@ fn main() {
                 let _ = Command::new("afplay").arg(&summary.output_path).status();
             }
         }
+        "youtube" | "youtube-full" | "/youtube-full" => {
+            let url = args
+                .get(2)
+                .map(|s| s.as_str())
+                .unwrap_or("https://youtu.be/4NRXx6U8ABQ?list=RD4NRXx6U8ABQ");
+            let mut dj = ZenoDjUltraEngine::new(layers);
+            let _ = dj.bt_router.apply_live_macos_routing();
+            let report = dj.verify_zeno_iouqt();
+            println!("╔══════════════════════════════════════════════════════════════════════════╗");
+            println!("║  8b-is-music :: YOUTUBE-FULL -> M1-ULTRA DJ IOuQT DECK STREAM            ║");
+            println!("╚══════════════════════════════════════════════════════════════════════════╝");
+            println!("  • Stream URL       : {}", url);
+            println!("  • IOuQT SIMD Lane  : `{}` (Zeno ceiling={:.6}, QuantTern={})",
+                report.uq_native_simd_lane, report.zeno_ceiling_q16, report.iouqt_master_quanttern_tag);
+            println!("  • Output Routing   : M1 MIDI: Left Ear Jack (Pan 0.0) + Right Ear AirPods (Pan 1.0) @ 48,000 Hz");
+            let _ = Command::new("open").arg(url).status();
+        }
         _ => {
             let full = build_full_system_report(layers, topology);
             if json_mode {
