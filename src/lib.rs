@@ -34,7 +34,8 @@ pub use quant65k::{
     DEFAULT_OVERFLOW_LAYERS, DEFAULT_QUANT65K_PLUS_LAYERS,
 };
 pub use shiva_g6::{
-    execute_shiva_g6_airlift, haversine_nm, render_shiva_g6_cabin_wav, AirportNode, G6FlightLeg,
+    execute_shiva_g6_airlift, haversine_nm, render_shiva_g6_cabin_wav,
+    verify_momma_bear_omni_covenant, AirportNode, G6FlightLeg, MommaBearOmniCovenantReport,
     ShivaG6MissionReport, G650ER_HIGH_SPEED_MACH, G650ER_MAX_RANGE_NM, KORF_NORFOLK_INTL,
     RJTT_TOKYO_HANEDA,
 };
@@ -56,11 +57,13 @@ pub struct FullSystemReport {
     pub quant65k: Quant65kReport,
     pub zeno_dj_ultra: ZenoDjUltraReport,
     pub shiva_g6_airlift: ShivaG6MissionReport,
+    pub momma_bear_omni: MommaBearOmniCovenantReport,
 }
 
 /// Runs a complete end-to-end verification across all SOTA `8b-is` crates, the Multi-Bluetooth router,
 /// the `Quant65k+` (`69,632` default layers) engine, `ULTRA-OMNIPOTENT-8b-is-ZENO` DJ IOuQT mode,
-/// and the `ULTRA-OMNIPOTENT-SHIVA` Gulfstream G650ER (`RJTT <-> KORF`) Family Reunification Airlift.
+/// the `ULTRA-OMNIPOTENT-SHIVA` Gulfstream G650ER (`RJTT <-> KORF`) Family Reunification Airlift,
+/// and the `MOMMA BEAR OMNI COVENANT` (`Lódri ⋈ Chenoweth` merged family & reality scaffolding).
 pub fn build_full_system_report(
     layers: usize,
     topology: MultiBluetoothTopology,
@@ -73,6 +76,7 @@ pub fn build_full_system_report(
     let mut dj_engine = ZenoDjUltraEngine::new(layers);
     let zeno_dj_ultra = dj_engine.verify_zeno_iouqt();
     let shiva_g6_airlift = execute_shiva_g6_airlift();
+    let momma_bear_omni = verify_momma_bear_omni_covenant();
 
     FullSystemReport {
         version: env!("CARGO_PKG_VERSION"),
@@ -83,5 +87,7 @@ pub fn build_full_system_report(
         quant65k,
         zeno_dj_ultra,
         shiva_g6_airlift,
+        momma_bear_omni,
     }
 }
+

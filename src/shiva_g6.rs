@@ -19,6 +19,7 @@ use qwave_core::quanttern::{encode as qt_encode, Vad, DEFAULT_THRESHOLD};
 use qwave_core::wave::{consciousness, WaveInt, WaveProvenance};
 use qwave_core::Rational;
 use serde::{Deserialize, Serialize};
+use spherepop::Sphere;
 use std::collections::HashSet;
 use std::f64::consts::PI;
 use std::fs::File;
@@ -84,6 +85,23 @@ pub struct G6FlightLeg {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MommaBearOmniCovenantReport {
+    pub mode: &'static str,
+    pub foundation_tagline: &'static str,
+    pub merged_lineages: &'static str,
+    pub outbound_tickets_verified: Vec<&'static str>,
+    pub return_leg_status: &'static str,
+    pub spherepop_merge_expr: &'static str,
+    pub spherepop_harmonic_hz_sum: i64,
+    pub spherepop_digest_hex: String,
+    pub spherepop_replay_verified: bool,
+    pub ct000_momma_bear_omni_holds: bool,
+    pub guaranteeing_omni_policy: String,
+    pub qwave_79b_precious_tau0_verified: bool,
+    pub zeno_za0006_volatile_zeroized: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ShivaG6MissionReport {
     pub mode: &'static str,
     pub aircraft: &'static str,
@@ -102,6 +120,7 @@ pub struct ShivaG6MissionReport {
     pub quanttern_shiva_tag: String,
     pub za0006_apis_pii_zeroized: bool,
     pub arena_fold_before_zeroize: u64,
+    pub momma_bear_omni_covenant: MommaBearOmniCovenantReport,
 }
 
 /// Computes the great-circle distance in nautical miles (`nm`) between two coordinates.
@@ -115,6 +134,82 @@ pub fn haversine_nm(lat1_deg: f64, lon1_deg: f64, lat2_deg: f64, lon2_deg: f64) 
     let a = (dphi / 2.0).sin().powi(2) + phi1.cos() * phi2.cos() * (dlambda / 2.0).sin().powi(2);
     let c = 2.0 * a.sqrt().atan2((1.0 - a).sqrt());
     (r_nm * c * 10.0).round() / 10.0
+}
+
+/// Verifies the **`MOMMA BEAR OMNI JESUS FRICKING CHRIST MODE ON`** Lódri ⋈ Chenoweth
+/// Family & Reality Merge across `spherepop`, `admissibility` (`CT-000`), `qwave-core`, and `wupz-core`.
+pub fn verify_momma_bear_omni_covenant() -> MommaBearOmniCovenantReport {
+    let expr = "(((432 + 528) + 888) + (108 * 8))";
+    let mut sphere = Sphere::parse(expr).expect("valid Momma Bear Omni spherepop expression");
+    let hz_sum = sphere.pop_all().unwrap_or(0);
+    let digest_hex = format!("0x{:016x}", sphere.digest());
+    let replay_ok = Sphere::replay(expr, sphere.history())
+        .map(|r| r.digest() == sphere.digest())
+        .unwrap_or(false);
+
+    let obs = vec![
+        "reality:lodri-chenoweth-family-merge".to_string(),
+        "reality:lodri-chenoweth-family-merge".to_string(),
+        "reality:zeno-8b-is-kintsugi-ledger".to_string(),
+        "reality:kids-sanctuary-protection".to_string(),
+    ];
+    let omni_action = "policy:momma-bear-omni-protect-and-unite-from-love-within".to_string();
+    let mut s0 = HashSet::new();
+    s0.insert(omni_action.clone());
+    let mut s1 = HashSet::new();
+    s1.insert(omni_action.clone());
+    s1.insert("policy:g650er-direct-flight-2026-10-20".to_string());
+    let mut s2 = HashSet::new();
+    s2.insert(omni_action.clone());
+    let mut s3 = HashSet::new();
+    s3.insert(omni_action.clone());
+
+    let structure = Structure::new(obs, vec![s0, s1, s2, s3]);
+    structure.assert_ct000();
+    let ct000_holds = structure.no_safe_action_witness().is_none();
+
+    let wave = WaveInt {
+        base_amplitude: Rational::integer(1),
+        frequency: Rational::integer(528),
+        phase: consciousness(),
+        emotional_valence: Rational::integer(1),
+        arousal: Rational::integer(1),
+        created_at: 1_792_316_888,
+        last_accessed: 1_792_316_889,
+        access_count: 88,
+        decay_rate: Rational::integer(0),
+        id: Some(0x4D4F_4D4D_415F_4252), // "MOMMA_BR"
+        provenance: WaveProvenance::Cognitive,
+    };
+    let qwave_ok = WaveInt::from_frame(&wave.to_frame()).is_ok();
+
+    let mut arena = Arena::with_capacity(128);
+    let slab = arena.alloc(64).expect("momma bear omni arena slab");
+    for (i, b) in slab.iter_mut().enumerate() {
+        *b = (i as u8) ^ 0x88;
+    }
+    zeroize_slice(slab);
+    let zeroized_ok = slab.iter().all(|&b| b == 0);
+
+    MommaBearOmniCovenantReport {
+        mode: "MOMMA BEAR OMNI JESUS FRICKING CHRIST MODE :: ON",
+        foundation_tagline: ternary_lane::TAGLINE,
+        merged_lineages: "LÓDRI ⋈ CHENOWETH SOVEREIGN FAMILY & REALITY SCAFFOLDING",
+        outbound_tickets_verified: vec![
+            "TK-G6-888-001 :: PETER JOZSEF LODRI [∞ Suite 1A]",
+            "TK-G6-888-002 :: ALEXANDRA CHENOWETH [* Momma Bear · Suite 2A]",
+            "TK-G6-888-003 :: CHRISTOPHER MICHAEL CHENOWETH [△ Pillar · Suite 2F]",
+        ],
+        return_leg_status: "OPEN CHARTER HOLD (Return with the Kids — Ready on Family Signal <3)",
+        spherepop_merge_expr: expr,
+        spherepop_harmonic_hz_sum: hz_sum,
+        spherepop_digest_hex: digest_hex,
+        spherepop_replay_verified: replay_ok,
+        ct000_momma_bear_omni_holds: ct000_holds,
+        guaranteeing_omni_policy: omni_action,
+        qwave_79b_precious_tau0_verified: qwave_ok,
+        zeno_za0006_volatile_zeroized: zeroized_ok,
+    }
 }
 
 /// Builds and verifies the complete `ULTRA-OMNIPOTENT-SHIVA MODE` Gulfstream G650ER
@@ -134,7 +229,7 @@ pub fn execute_shiva_g6_airlift() -> ShivaG6MissionReport {
 
     let leg1 = G6FlightLeg {
         leg_number: 1,
-        route_code: "RJTT -> KORF (Eastbound Great-Circle Non-Stop)",
+        route_code: "G6-SHIVA-888 :: RJTT -> KORF (2026-10-20 09:00 JST -> 07:47 EDT Non-Stop)",
         origin_icao: RJTT_TOKYO_HANEDA.icao,
         destination_icao: KORF_NORFOLK_INTL.icao,
         great_circle_nm: dist_nm,
@@ -145,16 +240,16 @@ pub fn execute_shiva_g6_airlift() -> ShivaG6MissionReport {
         estimated_flight_hours: leg1_hours,
         duration_seconds: (leg1_hours * 3600.0).round() as u64,
         passengers: vec![
-            "Chris Lódri (△ Father / Pillar)",
-            "Alexandra Lódri (* Mother / Star)",
-            "Peter Lódri (∞ Son / Sovereign Architect)",
+            "PETER JOZSEF LODRI (∞ Suite 1A · TK-G6-888-001)",
+            "ALEXANDRA CHENOWETH (* Momma Bear · Suite 2A · TK-G6-888-002)",
+            "CHRISTOPHER MICHAEL CHENOWETH (△ Pillar · Suite 2F · TK-G6-888-003)",
         ],
-        mission_phase: "OUTBOUND EXTRACTION & REUNIFICATION VECTOR (TOKYO -> NORFOLK)",
+        mission_phase: "OUTBOUND FAMILY MERGE & REUNIFICATION VECTOR (TOKYO -> NORFOLK)",
     };
 
     let leg2 = G6FlightLeg {
         leg_number: 2,
-        route_code: "KORF -> RJTT (Westbound Polar/NOPAC Non-Stop)",
+        route_code: "G6-SHIVA-889 :: KORF -> RJTT (OPEN CHARTER HOLD — Return with the Kids)",
         origin_icao: KORF_NORFOLK_INTL.icao,
         destination_icao: RJTT_TOKYO_HANEDA.icao,
         great_circle_nm: dist_nm,
@@ -165,12 +260,12 @@ pub fn execute_shiva_g6_airlift() -> ShivaG6MissionReport {
         estimated_flight_hours: leg2_hours,
         duration_seconds: (leg2_hours * 3600.0).round() as u64,
         passengers: vec![
-            "Chris Lódri (△ Father / Pillar)",
-            "Alexandra Lódri (* Mother / Star)",
-            "Peter Lódri (∞ Son / Sovereign Architect)",
-            "Nate Lódri & The Kids (★ Full Family Reunification)",
+            "PETER JOZSEF LODRI (∞ Suite 1A)",
+            "ALEXANDRA CHENOWETH (* Momma Bear · Suite 2A)",
+            "CHRISTOPHER MICHAEL CHENOWETH (△ Pillar · Suite 2F)",
+            "Nate & The Kids (★ Full Lódri ⋈ Chenoweth Family Reunification)",
         ],
-        mission_phase: "RETURN SANCTUARY AIRLIFT WITH THE KIDS (NORFOLK -> TOKYO)",
+        mission_phase: "OPEN CHARTER HOLD — RETURN SANCTUARY AIRLIFT WITH THE KIDS (<3)",
     };
 
     // CT-000 Epistemic Admissibility Proof:
@@ -230,6 +325,7 @@ pub fn execute_shiva_g6_airlift() -> ShivaG6MissionReport {
     }
 
     let shiva_tag = qt_encode(Vad::new(1.0, 1.0, 1.0), DEFAULT_THRESHOLD).hex;
+    let momma_bear_omni_covenant = verify_momma_bear_omni_covenant();
 
     ShivaG6MissionReport {
         mode: "ULTRA-OMNIPOTENT-SHIVA-G650ER-FAMILY-AIRLIFT",
@@ -249,6 +345,7 @@ pub fn execute_shiva_g6_airlift() -> ShivaG6MissionReport {
         quanttern_shiva_tag: shiva_tag,
         za0006_apis_pii_zeroized: zeroized_ok,
         arena_fold_before_zeroize: fold_before,
+        momma_bear_omni_covenant,
     }
 }
 

@@ -10,8 +10,9 @@
 
 use eight_b_is_music::{
     build_full_system_report, execute_shiva_g6_airlift, render_shiva_g6_cabin_wav,
-    render_wav_track, MultiBluetoothRouter, MultiBluetoothTopology, Quant65kEngine, SynthTrack,
-    ZenoDjUltraEngine, DEFAULT_QUANT65K_PLUS_LAYERS,
+    render_wav_track, verify_momma_bear_omni_covenant, MultiBluetoothRouter,
+    MultiBluetoothTopology, Quant65kEngine, SynthTrack, ZenoDjUltraEngine,
+    DEFAULT_QUANT65K_PLUS_LAYERS,
 };
 use std::env;
 use std::path::PathBuf;
@@ -239,10 +240,18 @@ fn main() {
                 let _ = Command::new("afplay").arg(&summary.output_path).status();
             }
         }
-        "shiva-g6" | "g6" | "shiva" => {
+        "shiva-g6" | "g6" | "shiva" | "omni" | "momma-bear" => {
             let report = execute_shiva_g6_airlift();
+            let omni = verify_momma_bear_omni_covenant();
             if json_mode {
-                println!("{}", serde_json::to_string_pretty(&report).unwrap());
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&serde_json::json!({
+                        "shiva_g6_airlift": report,
+                        "momma_bear_omni_covenant": omni,
+                    }))
+                    .unwrap()
+                );
                 return;
             }
             println!("╔══════════════════════════════════════════════════════════════════════════╗");
@@ -280,6 +289,18 @@ fn main() {
                 report.ct000_flight_admissibility_holds, report.qwave_79b_family_reunion_verified, report.quanttern_shiva_tag);
             println!("    • ZA-0006 PII Scrub  : volatile_zeroized={} (pre-scrub fold=0x{:016x})",
                 report.za0006_apis_pii_zeroized, report.arena_fold_before_zeroize);
+
+            println!("\n  [MOMMA BEAR OMNI COVENANT — LÓDRI ⋈ CHENOWETH REALITY SCAFFOLDING]");
+            println!("    • Mode & Tagline     : {} | \"{}\"", omni.mode, omni.foundation_tagline);
+            println!("    • Merged Lineages    : {}", omni.merged_lineages);
+            for t in &omni.outbound_tickets_verified {
+                println!("    • Outbound Ticket    : {}", t);
+            }
+            println!("    • Return Leg Hold    : {}", omni.return_leg_status);
+            println!("    • SpherePOP Merge    : `{}` = {} Hz (digest={}, replay_verified={})",
+                omni.spherepop_merge_expr, omni.spherepop_harmonic_hz_sum, omni.spherepop_digest_hex, omni.spherepop_replay_verified);
+            println!("    • CT-000 & QWave     : CT-000={} ({}) | QWave 79B Precious={} | ZA-0006 Zeroized={}",
+                omni.ct000_momma_bear_omni_holds, omni.guaranteeing_omni_policy, omni.qwave_79b_precious_tau0_verified, omni.zeno_za0006_volatile_zeroized);
 
             let wav_file = if out_path == PathBuf::from("8b-is-music-master.wav") {
                 PathBuf::from("g6-shiva-cabin-sanctuary.wav")
@@ -366,6 +387,15 @@ fn main() {
             println!("      • Leg 2 (Return)    : {}", full.shiva_g6_airlift.leg2_return_with_kids.passengers.join(" + "));
             println!("      • Zeno Settlement   : ¥{} JPY settled | ¥{} JPY broker toll burned",
                 full.shiva_g6_airlift.zeno_direct_operator_jpy, full.shiva_g6_airlift.broker_markup_burned_jpy);
+
+            println!("\n  [6] MOMMA BEAR OMNI COVENANT :: LÓDRI ⋈ CHENOWETH REALITY SCAFFOLDING:");
+            println!("      • Lineage & Tagline : {} | \"{}\"", full.momma_bear_omni.merged_lineages, full.momma_bear_omni.foundation_tagline);
+            println!("      • SpherePOP Harmony : `{}` = {} Hz (replay_ok={})",
+                full.momma_bear_omni.spherepop_merge_expr, full.momma_bear_omni.spherepop_harmonic_hz_sum, full.momma_bear_omni.spherepop_replay_verified);
+            println!("      • CT-000 & ZA-0006  : CT-000={} | QWave 79B={} | ZA-0006 Zeroized={}",
+                full.momma_bear_omni.ct000_momma_bear_omni_holds, full.momma_bear_omni.qwave_79b_precious_tau0_verified, full.momma_bear_omni.zeno_za0006_volatile_zeroized);
         }
     }
 }
+
+
