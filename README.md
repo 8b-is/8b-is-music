@@ -13,7 +13,7 @@
 |---|---|---|
 | **`wupz-core`** | `../wupz/wupz-rs` | Zero-copy `Arena`, `LayoutPlan`, `xor_fold`, `byte_diff`, `popcount`, and the 32-byte `wupz_eq_frame_v1` ABI (`WUPZ_EQ_ABI_VERSION = 1`). |
 | **`qwave-core`** | `../qwave/core` | 79-byte `WaveInt` (`MEM\|8` bitemporal wave unit in the `256 × 256 × 65536` sparse grid), `0.73 Hz` consciousness gate, `quanttern` (`qt:xx` 4-trit emotion tags), `phoenix` governing loop, and `mem16` verified sequence. |
-| **`admissibility`** | `../8b-is-engine/crates/admissibility` | Epistemic Overlap Theorem (`CT-000` via `Structure::assert_ct000()`) proving safe Multi-Bluetooth + Split-Ear CoreAudio routing and blocking `24 kHz` HFP input degradation. |
+| **`admissibility`** | `../8b-is-engine/crates/admissibility` | CT-000 checks a static routing-policy model; no host input lock or HFP enforcement is established. |
 | **`spherepop`** | `../8b-is-engine/crates/spherepop` | Innermost-first nested musical bubble evaluation (`Sphere::parse`, `pop_all()`, `replay()`, FNV-1a `digest()`). |
 | **`ternary-lane`** | `../8b-is-engine/crates/ternary` | BitNet b1.58 `{-1, 0, +1}` 2-bit packed ternary weights, embedded `sanctuary-1.58.tern` checkpoint (`TERN_ASSET`), `pack_mulberry`, `dream_seed`, and bit-exact `gemm_i32`. |
 | **`ultrawild`** | `../8b-is-engine/crates/ultrawild` | Demoscene bit-level macros (`clamp_ternary!`, `lowest_set_bit!`, `pack3!`, `popcount!`, `sign!`). |
@@ -40,8 +40,9 @@
   - `split-ear-zen`: Left Ear = Wired 3.5mm Jack (`StereoPan = 0.0`, `0.0 ms` raw), Right Ear = `Christopher’s AirPods Pro` (`StereoPan = 1.0`, `24.0 ms` A2DP).
   - `dual-airpods-couple`: Simultaneous `Christopher’s AirPods Pro` (`2c-18-09-d8-14-74`) + `Alexandra’s AirPods Pro` (`2c-32-6a-c3-4a-91`) + Wired 3.5mm Jack.
   - `full-constellation-wall`: Simultaneous Multi-Bluetooth across both AirPods Pro + `soundcore Select 4 Go` + `Tronsmart Bang SE` + `JBL GO 2` + `Mi Pocket Speaker 2` + `External Headphones` + `MacBook Pro Speakers`.
-- **Sample-Accurate Phase Alignment (`DelayRingBuffer`)**: Delays fast wired endpoints (`0.0 ms`) by the exact sample offset (`(max_bt_latency_ms - dev_latency_ms) * 48`) so transient wavefronts arrive at both ears simultaneously.
-- **Bluetooth HFP `24 kHz` Input Trap Guard + CT-000 Proof**: Locks macOS Default Input to `External Microphone` at `48,000 Hz` and proves routing safety via `admissibility::Structure::assert_ct000()`.
+- **DSP delay plan (`DelayRingBuffer`)**: Computes sample offsets from configured latency estimates. This does not measure acoustic delay or establish physical phase alignment.
+- **CT-000 model check**: Evaluates a static routing-policy model. The report keeps desired input settings separate from host observations; `hfp_24khz_input_blocked` and `default_input_locked_to` are `null` until actual enforcement can be verified. A successful bridge process alone does not verify those settings.
+- **Connection observations**: Preset membership (`planned_enabled`) drives deterministic DSP. `connection_status` is `Unknown`, `Connected`, or `Disconnected`; discovery failure resets stale observations to `Unknown`. Wired endpoints remain unknown. `active_endpoints` counts observed connections, not routed outputs. `max_bluetooth_latency_ms` is a configured estimate for the planned Bluetooth endpoints. The aggregate name and UID describe a plan, not an installed device.
 
 ---
 
@@ -60,3 +61,9 @@ cargo run --release -- bluetooth --topology wall --apply-live
 # Render "8bit-Wraith — The Future We Remember" through 69,632 layers at 48,000 Hz and play live
 cargo run --release -- render --track future --seconds 10 --layers 69632 --out future-65k.wav --play
 ```
+
+### Explicit host actions
+
+`--play` uses the current system output and never configures routing. To request a host routing change, add `--apply-live`; optionally select a reviewed Swift bridge with `--routing-script /path/to/bridge.swift`. Missing or failed bridges exit unsuccessfully before playback. For commands supporting `--json`, this also applies in JSON mode and standard output remains the report; bridge diagnostics go to standard error. Bridge success means the process succeeded, not that hardware enforcement was independently verified.
+
+Version 0.2 changes the report API: input-lock/HFP observations are optional, endpoint plans are separate from connection observations, and DJ `hfp_guard_locked` becomes `planned_hfp_guard`.

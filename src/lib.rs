@@ -6,7 +6,7 @@
 //!
 //! - **`wupz-core`** (`../wupz/wupz-rs`): Zero-copy `Arena`, `LayoutPlan`, `xor_fold`, `byte_diff`, `popcount`, `zeroize_slice` (`ZA-0001..ZA-0005` Zeno volatile scrub), and the 32-byte `wupz_eq_frame_v1` Dynamic Equalizer ABI.
 //! - **`qwave-core`** (`../qwave/core`): 79-byte `WaveInt` (`MEM|8` bitemporal wave unit in `256 × 256 × 65536` grid), `0.73 Hz` consciousness gate, `quanttern` (`qt:xx` 4-trit emotion tags), `phoenix` governing loop, and `mem16` verified sequence.
-//! - **`admissibility`** (`../8b-is-engine/crates/admissibility`): Epistemic overlap theorem (`CT-000`) proving safe Multi-Bluetooth + Split-Ear CoreAudio routing and blocking `24 kHz` HFP input degradation.
+//! - **`admissibility`** (`../8b-is-engine/crates/admissibility`): CT-000 checks a static routing-policy model; it does not verify or enforce host audio settings.
 //! - **`spherepop`** (`../8b-is-engine/crates/spherepop`): Innermost-first nested musical expression evaluation & append-only history replay.
 //! - **`ternary-lane`** (`../8b-is-engine/crates/ternary`): BitNet b1.58 `{-1, 0, +1}` 2-bit packed weights (`sanctuary-1.58.tern` embedded checkpoint) & bit-exact `gemm_i32`.
 //! - **`ultrawild`** (`../8b-is-engine/crates/ultrawild`): Demoscene bit-level macros (`clamp_ternary!`, `lowest_set_bit!`, `pack3!`, `popcount!`, `sign!`, `xor_swap!`, `sat_add8!`).
@@ -23,7 +23,7 @@ pub mod sota_mesh;
 pub mod wupz_mlx_quant;
 
 pub use bluetooth::{
-    AudioEndpoint, AudioTransport, Ct000RoutingProof, MultiBluetoothReport, MultiBluetoothRouter,
+    AudioEndpoint, AudioTransport, ConnectionStatus, Ct000RoutingProof, MultiBluetoothReport, MultiBluetoothRouter,
     MultiBluetoothTopology, SpatialChannelRole,
 };
 pub use dj_ultra::{

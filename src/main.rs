@@ -27,6 +27,16 @@ fn parse_topology(val: &str) -> MultiBluetoothTopology {
     }
 }
 
+fn play_file(path: &str) {
+    match Command::new("afplay").arg(path).status() {
+        Ok(status) if status.success() => {},
+        result => {
+            eprintln!("Playback failed: {result:?}");
+            std::process::exit(1);
+        }
+    }
+}
+
 fn main() {
     let args: Vec<String> = env::args().collect();
     let subcmd = args.get(1).map(|s| s.as_str()).unwrap_or("status");
@@ -35,6 +45,7 @@ fn main() {
     let mut inspect_layer: Option<usize> = None;
     let mut topology = MultiBluetoothTopology::FullConstellationWall;
     let mut apply_live = false;
+    let mut routing_script: Option<PathBuf> = None;
     let mut json_mode = false;
     let mut track = SynthTrack::FutureWeRemember;
     let mut seconds: f32 = 8.0;
@@ -63,6 +74,15 @@ fn main() {
                 }
             }
             "--apply-live" => apply_live = true,
+            "--routing-script" => {
+                if let Some(path) = args.get(i + 1) {
+                    routing_script = Some(PathBuf::from(path));
+                    i += 1;
+                } else {
+                    eprintln!("--routing-script requires a path");
+                    std::process::exit(2);
+                }
+            },
             "--json" => json_mode = true,
             "--track" => {
                 if let Some(v) = args.get(i + 1) {
@@ -88,6 +108,26 @@ fn main() {
         i += 1;
     }
 
+    // Routing is a separate explicit action, including when JSON output is selected.
+    if apply_live {
+        if !matches!(subcmd, "bluetooth" | "dj" | "zeno" | "iouqt" | "render" | "triangle" | "family+1" | "youtube" | "youtube-full" | "/youtube-full") {
+            eprintln!("--apply-live is unsupported for this command");
+            std::process::exit(2);
+        }
+        let router = MultiBluetoothRouter::planned(topology);
+        let result = match routing_script.as_deref() {
+            Some(path) => router.apply_macos_routing_script(path),
+            None => router.apply_live_macos_routing(),
+        };
+        match result {
+            Ok(output) => eprintln!("CoreAudio bridge process completed (hardware state unverified): {}", output.trim()),
+            Err(error) => {
+                eprintln!("CoreAudio routing failed: {error}");
+                std::process::exit(1);
+            }
+        }
+    }
+
     match subcmd {
         "dj" | "zeno" | "iouqt" => {
             let mut dj = ZenoDjUltraEngine::new(layers);
@@ -111,8 +151,8 @@ fn main() {
             println!("\n  [ALL IN — Full-Duplex 48,000 Hz Input Matrix]");
             for ch in &report.all_in_channels {
                 println!(
-                    "    • {:<5} | {:<52} | {} Hz | gain={:.2} | HFP-Guard={} | trit={:+}",
-                    ch.id, ch.name, ch.sample_rate_hz, ch.gain_scalar, ch.hfp_guard_locked, ch.quanttern_trit
+                    "    • {:<5} | {:<52} | {} Hz | gain={:.2} | Planned-HFP-Guard={} | trit={:+}",
+                    ch.id, ch.name, ch.sample_rate_hz, ch.gain_scalar, ch.planned_hfp_guard, ch.quanttern_trit
                 );
             }
 
@@ -130,13 +170,6 @@ fn main() {
                     "    • {:<19} | {:<56} | {:.1} BPM | fader={:.2} | EQ=[{:+.1}, {:+.1}, {:+.1}] dB",
                     d.deck_id, d.title, d.bpm, d.fader_level, d.eq_low_db, d.eq_mid_db, d.eq_high_db
                 );
-            }
-
-            if apply_live {
-                println!("\n  [CoreAudio Live Hardware Bridge]");
-                if let Ok(out) = dj.bt_router.apply_live_macos_routing() {
-                    println!("{}", out.trim());
-                }
             }
 
             let mix_summary = dj
@@ -157,8 +190,8 @@ fn main() {
             );
 
             if play_after {
-                println!("  ▶ Playing {} across M1-ULTRA DJ Split-Ear + Multi-Bluetooth rig...", mix_summary.output_path);
-                let _ = Command::new("afplay").arg(&mix_summary.output_path).status();
+                println!("  ▶ Playing {} through the current system output...", mix_summary.output_path);
+                play_file(&mix_summary.output_path);
             }
         }
         "quant65k" => {
@@ -197,26 +230,19 @@ fn main() {
             println!("╔══════════════════════════════════════════════════════════════════════════╗");
             println!("║  8b-is-music :: MULTI-BLUETOOTH + COREAUDIO SPATIAL ROUTER               ║");
             println!("╚══════════════════════════════════════════════════════════════════════════╝");
-            println!("  • Active Topology      : {} ({}/{} endpoints active)", report.topology, report.active_endpoints, report.total_known_endpoints);
-            println!("  • Aggregate Device     : {} [{}]", report.aggregate_device_name, report.aggregate_uid);
-            println!("  • Max BT A2DP Latency  : {:.1} ms (phase-aligned at 48,000 Hz)", report.max_bluetooth_latency_ms);
-            println!("  • CT-000 Admissibility : theorem_holds={} | keeper_canon={} | HFP 24kHz Blocked={}",
+            println!("  • Configured Topology  : {} ({}/{} endpoints observed connected)", report.topology, report.active_endpoints, report.total_known_endpoints);
+            println!("  • Planned Aggregate    : {} [{}]", report.aggregate_device_name, report.aggregate_uid);
+            println!("  • Planned BT Latency   : {:.1} ms (configured estimate, not measured)", report.max_bluetooth_latency_ms);
+            println!("  • CT-000 Model Check   : theorem_holds={} | keeper_canon={} | HFP enforcement={:?}",
                 report.ct000_proof.theorem_holds, report.ct000_proof.keeper_canon_verified, report.ct000_proof.hfp_24khz_input_blocked);
-            println!("  • Default Input Guard  : {}", report.ct000_proof.default_input_locked_to);
+            println!("  • Observed Input Lock  : {:?} (None = unverified)", report.ct000_proof.default_input_locked_to);
             println!("\n  Discovered & Configured Endpoints:");
             for ep in &report.endpoints {
-                let state = if ep.connected { "ACTIVE  " } else { "STANDBY " };
+                let state = format!("{:?}; planned={}", ep.connection_status, ep.planned_enabled);
                 println!(
                     "    [{}] {:<38} | {:<18} | role={:?} | pan={:.2} | lat={:>4.1}ms | +{:>4} samples",
                     state, ep.name, ep.mac_or_uid, ep.role, ep.stereo_pan, ep.acoustic_latency_ms, ep.injected_delay_samples_48k
                 );
-            }
-            if apply_live {
-                println!("\n  Applying live macOS CoreAudio split-ear & Multi-Bluetooth configuration...");
-                match router.apply_live_macos_routing() {
-                    Ok(out) => println!("{}", out.trim()),
-                    Err(e) => eprintln!("CoreAudio bridge warning: {e}"),
-                }
             }
         }
         "render" | "triangle" | "family+1" => {
@@ -269,14 +295,8 @@ fn main() {
                 );
             }
             if play_after {
-                let bt_router = MultiBluetoothRouter::new(topology);
-                if let Ok(route_info) = bt_router.apply_live_macos_routing() {
-                    for line in route_info.lines() {
-                        println!("  • {}", line);
-                    }
-                }
-                println!("  ▶ Playing {} via Bluetooth (`soundcore Select 4 Go`) + CoreAudio (`afplay`)...", summary.output_path);
-                let _ = Command::new("afplay").arg(&summary.output_path).status();
+                println!("  ▶ Playing {} through the current system output (`afplay`)...", summary.output_path);
+                play_file(&summary.output_path);
             }
         }
         "wupz-mlx" | "mlx-quant" | "wupz" | "mlx" => {
@@ -389,7 +409,7 @@ fn main() {
             if let Ok((saved, pl, pr)) = render_shiva_g6_cabin_wav(seconds, &wav_file) {
                 println!("    • G6 Cabin WAV       : {} (108/432/528/888 Hz | Peak L={:.4}, R={:.4})", saved, pl, pr);
                 if play_after {
-                    let _ = Command::new("afplay").arg(&saved).status();
+                    play_file(&saved);
                 }
             }
         }
@@ -399,7 +419,6 @@ fn main() {
                 .map(|s| s.as_str())
                 .unwrap_or("https://youtu.be/4NRXx6U8ABQ?list=RD4NRXx6U8ABQ");
             let mut dj = ZenoDjUltraEngine::new(layers);
-            let _ = dj.bt_router.apply_live_macos_routing();
             let report = dj.verify_zeno_iouqt();
             println!("╔══════════════════════════════════════════════════════════════════════════╗");
             println!("║  8b-is-music :: YOUTUBE-FULL -> M1-ULTRA DJ IOuQT DECK STREAM            ║");
@@ -407,7 +426,7 @@ fn main() {
             println!("  • Stream URL       : {}", url);
             println!("  • IOuQT SIMD Lane  : `{}` (Zeno ceiling={:.6}, QuantTern={})",
                 report.uq_native_simd_lane, report.zeno_ceiling_q16, report.iouqt_master_quanttern_tag);
-            println!("  • Output Routing   : M1 MIDI: Left Ear Jack (Pan 0.0) + Right Ear AirPods (Pan 1.0) @ 48,000 Hz");
+            println!("  • Planned Routing  : M1 MIDI: Left Ear Jack (Pan 0.0) + Right Ear AirPods (Pan 1.0) @ 48,000 Hz");
             let _ = Command::new("open").arg(url).status();
         }
         _ => {
@@ -438,10 +457,10 @@ fn main() {
                 full.sota_mesh.dynamic_eq.noise_class, full.sota_mesh.dynamic_eq.quanttern_tag, full.sota_mesh.dynamic_eq.wupz_abi_xor);
 
             println!("\n  [2] Multi-Bluetooth + CoreAudio Spatial Router:");
-            println!("      • Aggregate         : {} ({}/{} endpoints active)", full.bluetooth.aggregate_device_name, full.bluetooth.active_endpoints, full.bluetooth.total_known_endpoints);
-            println!("      • CT-000 Proof      : holds={} | keeper_canon={} | HFP 24kHz Blocked={}",
+            println!("      • Planned Aggregate : {} ({}/{} endpoints observed connected)", full.bluetooth.aggregate_device_name, full.bluetooth.active_endpoints, full.bluetooth.total_known_endpoints);
+            println!("      • CT-000 Model Check: holds={} | keeper_canon={} | HFP enforcement={:?}",
                 full.bluetooth.ct000_proof.theorem_holds, full.bluetooth.ct000_proof.keeper_canon_verified, full.bluetooth.ct000_proof.hfp_24khz_input_blocked);
-            println!("      • Phase Alignment   : max BT latency {:.1} ms compensated at 48,000 Hz", full.bluetooth.max_bluetooth_latency_ms);
+            println!("      • DSP Delay Plan    : configured max BT latency {:.1} ms, not measured", full.bluetooth.max_bluetooth_latency_ms);
 
             println!("\n  [3] Quant65k+ ({}+ Layer) Ternary Wave Stack:", full.quant65k.total_layers);
             println!("      • Layers            : {} total ({} base + {} overflow)", full.quant65k.total_layers, full.quant65k.base_layers, full.quant65k.overflow_layers);
