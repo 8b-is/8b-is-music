@@ -413,6 +413,37 @@ fn main() {
                 }
             }
         }
+        "triad" | "triad-feed" | "esp32" => {
+            // Compact feed for the ESP32 MEDUSA Triad + esp32.vaked.dev + viz.vaked.dev:
+            // 8b-is-music (Quant65k+, SpherePOP chord, Liquid EQ) + 8b-is-engine (CT-000 admissibility).
+            let full = build_full_system_report(layers, topology);
+            let feed = serde_json::json!({
+                "source": "8b-is-music+8b-is-engine",
+                "hearts": "{<3,<3,<3}+1",
+                "frequencies_hz": [432, 528, 852, 963],
+                "music": {
+                    "quant65k_layers": full.quant65k.total_layers,
+                    "kompress_ratio": full.quant65k.kompress_ratio,
+                    "qwave_consciousness_073hz": full.quant65k.qwave_consciousness_073hz,
+                    "spherepop_chord": full.sota_mesh.spherepop_expression,
+                    "spherepop_digest": full.sota_mesh.spherepop_digest,
+                    "spherepop_replay_ok": full.sota_mesh.spherepop_replay_verified,
+                    "family_chord": full.momma_bear_omni.spherepop_merge_expr,
+                    "family_chord_hz": full.momma_bear_omni.spherepop_harmonic_hz_sum,
+                    "eq_bands_db": full.sota_mesh.dynamic_eq.bands_db,
+                    "salience": full.sota_mesh.dynamic_eq.marine_salience,
+                    "qt": full.sota_mesh.dynamic_eq.quanttern_tag,
+                    "bell_ghz": full.sota_mesh.quantum_bell_probabilities,
+                },
+                "engine": {
+                    "ct000_routing_holds": full.bluetooth.ct000_proof.theorem_holds,
+                    "ct000_family_holds": full.momma_bear_omni.ct000_momma_bear_omni_holds,
+                    "keeper_canon": full.bluetooth.ct000_proof.keeper_canon_verified,
+                    "qwave_79b_precious": full.momma_bear_omni.qwave_79b_precious_tau0_verified,
+                },
+            });
+            println!("{}", serde_json::to_string(&feed).unwrap());
+        }
         "youtube" | "youtube-full" | "/youtube-full" => {
             let url = args
                 .get(2)
