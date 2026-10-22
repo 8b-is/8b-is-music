@@ -52,7 +52,7 @@ pub struct DjInputChannel {
     pub sample_rate_hz: u32,
     pub gain_scalar: f32,
     pub active: bool,
-    pub hfp_guard_locked: bool,
+    pub planned_hfp_guard: bool,
     pub quanttern_trit: i8,
 }
 
@@ -152,7 +152,7 @@ impl ZenoDjUltraEngine {
                 sample_rate_hz: 48_000,
                 gain_scalar: 1.0,
                 active: true,
-                hfp_guard_locked: true,
+                planned_hfp_guard: true,
                 quanttern_trit: 1,
             },
             DjInputChannel {
@@ -162,7 +162,7 @@ impl ZenoDjUltraEngine {
                 sample_rate_hz: 48_000,
                 gain_scalar: 0.85,
                 active: true,
-                hfp_guard_locked: true,
+                planned_hfp_guard: true,
                 quanttern_trit: 1,
             },
             DjInputChannel {
@@ -172,7 +172,7 @@ impl ZenoDjUltraEngine {
                 sample_rate_hz: 48_000,
                 gain_scalar: 1.0,
                 active: true,
-                hfp_guard_locked: true,
+                planned_hfp_guard: true,
                 quanttern_trit: 1,
             },
             DjInputChannel {
@@ -182,7 +182,7 @@ impl ZenoDjUltraEngine {
                 sample_rate_hz: 48_000,
                 gain_scalar: 1.0,
                 active: true,
-                hfp_guard_locked: true,
+                planned_hfp_guard: true,
                 quanttern_trit: 0,
             },
         ];

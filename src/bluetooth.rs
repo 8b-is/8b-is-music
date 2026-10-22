@@ -1,16 +1,10 @@
-//! Multi-Bluetooth + Hybrid CoreAudio Spatial Routing & CT-000 Admissibility Engine.
+//! Configured Multi-Bluetooth DSP topology and separate host observations.
 //!
-//! Supports simultaneous Multi-Bluetooth + Wired 3.5mm Analog + Built-in MacBook Pro Halo routing:
-//! - Discovers paired & connected Bluetooth sinks on macOS (`IOBluetooth` / `system_profiler SPBluetoothDataType`)
-//!   alongside the verified hardware table on `mbp` (`Alexandra’s AirPods Pro`, `Christopher’s AirPods Pro`,
-//!   `soundcore Select 4 Go`, `Tronsmart Bang SE`, `Aladdin 2`, `IA-230D`, `JBL GO 2`, `Mi Pocket Speaker 2`,
-//!   `JBL GO`, `[LG] webOS TV OLED77G1PUA`, `External Headphones` 3.5mm Jack, `MacBook Pro Speakers`).
-//! - Builds stacked CoreAudio Multi-Output Aggregate configurations (`DriftCompensation = 1`, `Quality = 127`).
-//! - Aligns Bluetooth A2DP latency (`18–45 ms`) against wired `0 ms` 3.5mm Jack via per-endpoint
-//!   sample-accurate `DelayRingBuffer` delay lines at `48,000 Hz`.
-//! - Guards against the macOS Bluetooth HFP `24 kHz` input trap by locking Default Input to
-//!   `External Microphone` (`48,000 Hz`).
-//! - Proves routing safety via `8b-is-engine/crates/admissibility` (`Structure::assert_ct000()`).
+//! Endpoint identities, rates and latencies below are a preset, not measurements
+//! of this Mac. Discovery can report Bluetooth connection state; wired presence,
+//! aggregate routing, input locks and HFP enforcement are not verified here.
+//! CT-000 checks the static routing-policy model only. The optional Swift bridge
+//! is a separate host-changing action and its success is not a hardware readback.
 
 use admissibility::keeper_instance::admissible_actions;
 use admissibility::Structure;
@@ -43,6 +37,14 @@ pub enum SpatialChannelRole {
     RoomSubAnchor,
 }
 
+/// Latest host observation; configured endpoints start unobserved.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ConnectionStatus {
+    Unknown,
+    Connected,
+    Disconnected,
+}
+
 /// A discovered or configured Bluetooth / CoreAudio endpoint.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AudioEndpoint {
@@ -50,12 +52,16 @@ pub struct AudioEndpoint {
     pub mac_or_uid: String,
     pub transport: AudioTransport,
     pub role: SpatialChannelRole,
+    /// True only when the latest discovery explicitly reports a connection.
     pub connected: bool,
+    /// Membership in the configured DSP topology, independent of host discovery.
+    pub planned_enabled: bool,
+    pub connection_status: ConnectionStatus,
     pub sample_rate_hz: u32,
     pub master_volume_scalar: f32,
     pub stereo_pan: f32,
     pub drift_compensation: bool,
-    /// Measured acoustic / codec transport latency in milliseconds (`0.0 ms` wired, `22–42 ms` Bluetooth).
+    /// Configured estimate of acoustic / codec transport latency in milliseconds (`0.0 ms` wired, `22–42 ms` Bluetooth).
     pub acoustic_latency_ms: f32,
     /// Computed sample delay injected by `MultiBluetoothRouter` so all wavefronts arrive in phase at `48,000 Hz`.
     pub injected_delay_samples_48k: usize,
@@ -116,7 +122,7 @@ impl DelayRingBuffer {
     }
 }
 
-/// CT-000 Epistemic Admissibility proof certificate for Multi-Bluetooth routing.
+/// CT-000 certificate for a static policy model, not physical routing evidence.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Ct000RoutingProof {
     pub theorem_holds: bool,
@@ -124,8 +130,11 @@ pub struct Ct000RoutingProof {
     pub total_states: usize,
     pub total_observations: usize,
     pub guaranteeing_policy: BTreeMap<String, String>,
-    pub hfp_24khz_input_blocked: bool,
-    pub default_input_locked_to: String,
+    /// None means host enforcement has not been observed.
+    pub hfp_24khz_input_blocked: Option<bool>,
+    pub default_input_locked_to: Option<String>,
+    pub evidence_scope: String,
+    pub planned_default_input: String,
     pub nominal_sample_rate_hz: u32,
 }
 
@@ -135,8 +144,11 @@ pub struct MultiBluetoothReport {
     pub topology: String,
     pub aggregate_device_name: String,
     pub aggregate_uid: String,
+    /// Number explicitly observed connected, not a count of routed outputs.
     pub active_endpoints: usize,
+    pub planned_endpoints: usize,
     pub total_known_endpoints: usize,
+    /// Maximum configured latency among planned Bluetooth endpoints; not measured.
     pub max_bluetooth_latency_ms: f32,
     pub endpoints: Vec<AudioEndpoint>,
     pub ct000_proof: Ct000RoutingProof,
@@ -151,11 +163,16 @@ pub struct MultiBluetoothRouter {
 }
 
 impl MultiBluetoothRouter {
-    /// Creates a `MultiBluetoothRouter` initialized with the host's hardware fleet and computes
-    /// exact per-endpoint acoustic phase-alignment delays at `48,000 Hz`.
+    /// Creates a configured DSP plan and attempts a separate Bluetooth observation.
     pub fn new(topology: MultiBluetoothTopology) -> Self {
+        let mut router = Self::planned(topology);
+        Self::refresh_live_bluetooth_status(&mut router.endpoints);
+        router
+    }
+
+    /// Deterministic DSP plan without host discovery or audio configuration.
+    pub fn planned(topology: MultiBluetoothTopology) -> Self {
         let mut endpoints = Self::fleet_endpoints(topology);
-        Self::refresh_live_bluetooth_status(&mut endpoints);
         let delay_lines = Self::compute_delay_compensation(&mut endpoints);
         Self {
             topology,
@@ -164,12 +181,13 @@ impl MultiBluetoothRouter {
         }
     }
 
-    /// Canonical hardware endpoints discovered on Peter's M3 MacBook Pro (`mbp`).
+    /// Historical endpoint preset; these entries do not establish current presence.
     pub fn fleet_endpoints(topology: MultiBluetoothTopology) -> Vec<AudioEndpoint> {
         let all_active = matches!(topology, MultiBluetoothTopology::FullConstellationWall);
         let couple_mode = matches!(
             topology,
-            MultiBluetoothTopology::DualAirPodsCouple | MultiBluetoothTopology::FullConstellationWall
+            MultiBluetoothTopology::DualAirPodsCouple
+                | MultiBluetoothTopology::FullConstellationWall
         );
 
         vec![
@@ -178,7 +196,9 @@ impl MultiBluetoothRouter {
                 mac_or_uid: "BuiltInHeadphoneOutputDevice".to_string(),
                 transport: AudioTransport::Wired35mmJack,
                 role: SpatialChannelRole::LeftEarOnly,
-                connected: true,
+                connected: false,
+                planned_enabled: true,
+                connection_status: ConnectionStatus::Unknown,
                 sample_rate_hz: 48_000,
                 master_volume_scalar: 1.0,
                 stereo_pan: 0.0,
@@ -191,7 +211,9 @@ impl MultiBluetoothRouter {
                 mac_or_uid: "2c-18-09-d8-14-74".to_string(),
                 transport: AudioTransport::BluetoothA2dpAac,
                 role: SpatialChannelRole::RightEarOnly,
-                connected: true,
+                connected: false,
+                planned_enabled: true,
+                connection_status: ConnectionStatus::Unknown,
                 sample_rate_hz: 48_000,
                 master_volume_scalar: 1.0,
                 stereo_pan: 1.0,
@@ -204,7 +226,9 @@ impl MultiBluetoothRouter {
                 mac_or_uid: "2c-32-6a-c3-4a-91".to_string(),
                 transport: AudioTransport::BluetoothA2dpAac,
                 role: SpatialChannelRole::BinauralStereo,
-                connected: couple_mode,
+                connected: false,
+                planned_enabled: couple_mode,
+                connection_status: ConnectionStatus::Unknown,
                 sample_rate_hz: 48_000,
                 master_volume_scalar: 1.0,
                 stereo_pan: 0.5,
@@ -217,7 +241,9 @@ impl MultiBluetoothRouter {
                 mac_or_uid: "BuiltInSpeakerDevice".to_string(),
                 transport: AudioTransport::BuiltInSpeakers,
                 role: SpatialChannelRole::CenterHalo,
-                connected: true,
+                connected: false,
+                planned_enabled: true,
+                connection_status: ConnectionStatus::Unknown,
                 sample_rate_hz: 48_000,
                 master_volume_scalar: 1.0,
                 stereo_pan: 0.5,
@@ -230,7 +256,9 @@ impl MultiBluetoothRouter {
                 mac_or_uid: "00-7f-1d-7f-8d-35".to_string(),
                 transport: AudioTransport::BluetoothA2dpAac,
                 role: SpatialChannelRole::RoomSubAnchor,
-                connected: true,
+                connected: false,
+                planned_enabled: true,
+                connection_status: ConnectionStatus::Unknown,
                 sample_rate_hz: 48_000,
                 master_volume_scalar: 1.0,
                 stereo_pan: 0.5,
@@ -243,7 +271,9 @@ impl MultiBluetoothRouter {
                 mac_or_uid: "34-00-00-49-d4-49".to_string(),
                 transport: AudioTransport::BluetoothA2dpAac,
                 role: SpatialChannelRole::RoomSubAnchor,
-                connected: all_active,
+                connected: false,
+                planned_enabled: all_active,
+                connection_status: ConnectionStatus::Unknown,
                 sample_rate_hz: 48_000,
                 master_volume_scalar: 1.0,
                 stereo_pan: 0.5,
@@ -256,7 +286,9 @@ impl MultiBluetoothRouter {
                 mac_or_uid: "70-99-1c-55-cb-49".to_string(),
                 transport: AudioTransport::BluetoothA2dpAac,
                 role: SpatialChannelRole::CenterHalo,
-                connected: all_active,
+                connected: false,
+                planned_enabled: all_active,
+                connection_status: ConnectionStatus::Unknown,
                 sample_rate_hz: 48_000,
                 master_volume_scalar: 1.0,
                 stereo_pan: 0.35,
@@ -269,7 +301,9 @@ impl MultiBluetoothRouter {
                 mac_or_uid: "74-a3-4a-19-60-ca".to_string(),
                 transport: AudioTransport::BluetoothA2dpAac,
                 role: SpatialChannelRole::CenterHalo,
-                connected: all_active,
+                connected: false,
+                planned_enabled: all_active,
+                connection_status: ConnectionStatus::Unknown,
                 sample_rate_hz: 48_000,
                 master_volume_scalar: 1.0,
                 stereo_pan: 0.65,
@@ -283,6 +317,8 @@ impl MultiBluetoothRouter {
                 transport: AudioTransport::BluetoothA2dpAac,
                 role: SpatialChannelRole::CenterHalo,
                 connected: false,
+                planned_enabled: false,
+                connection_status: ConnectionStatus::Unknown,
                 sample_rate_hz: 48_000,
                 master_volume_scalar: 1.0,
                 stereo_pan: 0.5,
@@ -296,6 +332,8 @@ impl MultiBluetoothRouter {
                 transport: AudioTransport::BluetoothA2dpAac,
                 role: SpatialChannelRole::BinauralStereo,
                 connected: false,
+                planned_enabled: false,
+                connection_status: ConnectionStatus::Unknown,
                 sample_rate_hz: 48_000,
                 master_volume_scalar: 1.0,
                 stereo_pan: 0.5,
@@ -309,6 +347,8 @@ impl MultiBluetoothRouter {
                 transport: AudioTransport::BluetoothA2dpAac,
                 role: SpatialChannelRole::BinauralStereo,
                 connected: false,
+                planned_enabled: false,
+                connection_status: ConnectionStatus::Unknown,
                 sample_rate_hz: 48_000,
                 master_volume_scalar: 1.0,
                 stereo_pan: 0.5,
@@ -322,6 +362,8 @@ impl MultiBluetoothRouter {
                 transport: AudioTransport::BluetoothBleAudio,
                 role: SpatialChannelRole::BinauralStereo,
                 connected: false,
+                planned_enabled: false,
+                connection_status: ConnectionStatus::Unknown,
                 sample_rate_hz: 48_000,
                 master_volume_scalar: 1.0,
                 stereo_pan: 0.5,
@@ -332,22 +374,63 @@ impl MultiBluetoothRouter {
         ]
     }
 
-    /// Queries `system_profiler SPBluetoothDataType` on macOS if available to mark live connected devices.
+    /// Refreshes observations; failures clear stale connectivity to unknown.
     pub fn refresh_live_bluetooth_status(endpoints: &mut [AudioEndpoint]) {
-        if let Ok(output) = Command::new("system_profiler")
+        let output = Command::new("system_profiler")
             .args(["SPBluetoothDataType"])
-            .output()
-        {
-            if output.status.success() {
-                let text = String::from_utf8_lossy(&output.stdout);
-                if let Some(conn_split) = text.split("Connected:").nth(1) {
-                    let connected_block = conn_split.split("Not Connected:").next().unwrap_or("");
-                    for ep in endpoints.iter_mut() {
-                        let short_name = ep.name.split(" - ").next().unwrap_or(&ep.name);
-                        if connected_block.contains(short_name) {
-                            ep.connected = true;
-                        }
-                    }
+            .output();
+        let text = output
+            .ok()
+            .filter(|o| o.status.success())
+            .and_then(|o| String::from_utf8(o.stdout).ok());
+        Self::apply_bluetooth_observation(endpoints, text.as_deref());
+    }
+
+    fn apply_bluetooth_observation(endpoints: &mut [AudioEndpoint], text: Option<&str>) {
+        for ep in endpoints.iter_mut() {
+            ep.connected = false;
+            ep.connection_status = ConnectionStatus::Unknown;
+        }
+        let Some(text) = text else {
+            return;
+        };
+        let mut section = ConnectionStatus::Unknown;
+        let mut section_indent = 0;
+        for line in text.lines() {
+            let label = line.trim();
+            let indent = line.len() - line.trim_start().len();
+            match label {
+                "Connected:" => {
+                    section = ConnectionStatus::Connected;
+                    section_indent = indent;
+                    continue;
+                }
+                "Not Connected:" => {
+                    section = ConnectionStatus::Disconnected;
+                    section_indent = indent;
+                    continue;
+                }
+                _ => {}
+            }
+            if !label.is_empty() && indent <= section_indent {
+                section = ConnectionStatus::Unknown;
+            }
+            if section == ConnectionStatus::Unknown {
+                continue;
+            }
+            for ep in endpoints.iter_mut().filter(|e| {
+                matches!(
+                    e.transport,
+                    AudioTransport::BluetoothA2dpAac | AudioTransport::BluetoothBleAudio
+                )
+            }) {
+                let short_name = ep.name.split(" - ").next().unwrap_or(&ep.name);
+                if label
+                    .strip_suffix(':')
+                    .is_some_and(|name| name == ep.name || name == short_name)
+                {
+                    ep.connection_status = section;
+                    ep.connected = section == ConnectionStatus::Connected;
                 }
             }
         }
@@ -358,13 +441,13 @@ impl MultiBluetoothRouter {
     pub fn compute_delay_compensation(endpoints: &mut [AudioEndpoint]) -> Vec<DelayRingBuffer> {
         let max_latency_ms = endpoints
             .iter()
-            .filter(|e| e.connected)
+            .filter(|e| e.planned_enabled)
             .map(|e| e.acoustic_latency_ms)
             .fold(0.0f32, f32::max);
 
         let mut rings = Vec::with_capacity(endpoints.len());
         for ep in endpoints.iter_mut() {
-            if ep.connected {
+            if ep.planned_enabled {
                 let delta_ms = (max_latency_ms - ep.acoustic_latency_ms).max(0.0);
                 let delay_samples = ((delta_ms * 48.0).round()) as usize;
                 ep.injected_delay_samples_48k = delay_samples;
@@ -420,8 +503,10 @@ impl MultiBluetoothRouter {
             total_states: structure.worlds(),
             total_observations: 3,
             guaranteeing_policy: policy,
-            hfp_24khz_input_blocked: true,
-            default_input_locked_to: "External Microphone (BuiltInMicrophoneDevice @ 48,000 Hz)"
+            hfp_24khz_input_blocked: None,
+            default_input_locked_to: None,
+            evidence_scope: "static-policy-model-only".to_string(),
+            planned_default_input: "External Microphone (BuiltInMicrophoneDevice @ 48,000 Hz)"
                 .to_string(),
             nominal_sample_rate_hz: 48_000,
         }
@@ -437,7 +522,7 @@ impl MultiBluetoothRouter {
         let mut count_r = 0.0f32;
 
         for (idx, ep) in self.endpoints.iter().enumerate() {
-            if !ep.connected {
+            if !ep.planned_enabled {
                 continue;
             }
             let (dl, dr) = self.delay_lines[idx].process_frame(in_l, in_r);
@@ -481,8 +566,18 @@ impl MultiBluetoothRouter {
 
     /// Invokes the live macOS CoreAudio split-ear & multi-Bluetooth hardware configurator if present.
     pub fn apply_live_macos_routing(&self) -> Result<String, String> {
-        let script_path = "/Users/lodripeter/workspace/peterlodri-sec/scripts/m1-midi-split-audio.swift";
-        if std::path::Path::new(script_path).exists() {
+        let script_path =
+            "/Users/lodripeter/workspace/peterlodri-sec/scripts/m1-midi-split-audio.swift";
+        self.apply_macos_routing_script(std::path::Path::new(script_path))
+    }
+
+    /// Executes the caller-selected bridge. Process success does not verify hardware state.
+    pub fn apply_macos_routing_script(&self, path: &std::path::Path) -> Result<String, String> {
+        Self::apply_routing_script(path)
+    }
+
+    fn apply_routing_script(script_path: &std::path::Path) -> Result<String, String> {
+        if script_path.exists() {
             let output = Command::new("swift")
                 .arg(script_path)
                 .output()
@@ -493,7 +588,7 @@ impl MultiBluetoothRouter {
                 Err(String::from_utf8_lossy(&output.stderr).to_string())
             }
         } else {
-            Ok("CoreAudio virtual topology verified in-memory (script not present on host)".to_string())
+            Err("CoreAudio routing unavailable: bridge script is missing; host routing was not changed".to_string())
         }
     }
 
@@ -503,7 +598,13 @@ impl MultiBluetoothRouter {
         let max_bluetooth_latency_ms = self
             .endpoints
             .iter()
-            .filter(|e| e.connected)
+            .filter(|e| {
+                e.planned_enabled
+                    && matches!(
+                        e.transport,
+                        AudioTransport::BluetoothA2dpAac | AudioTransport::BluetoothBleAudio
+                    )
+            })
             .map(|e| e.acoustic_latency_ms)
             .fold(0.0f32, f32::max);
 
@@ -513,6 +614,7 @@ impl MultiBluetoothRouter {
                 .to_string(),
             aggregate_uid: "com.8b-is.m1-midi-left-jack-right-airpods".to_string(),
             active_endpoints,
+            planned_endpoints: self.endpoints.iter().filter(|e| e.planned_enabled).count(),
             total_known_endpoints: self.endpoints.len(),
             max_bluetooth_latency_ms,
             endpoints: self.endpoints.clone(),
@@ -526,13 +628,115 @@ mod tests {
     use super::*;
 
     #[test]
+    fn observations_replace_stale_connections_without_changing_the_plan() {
+        let mut endpoints =
+            MultiBluetoothRouter::fleet_endpoints(MultiBluetoothTopology::FullConstellationWall);
+        let plan: Vec<_> = endpoints.iter().map(|e| e.planned_enabled).collect();
+        MultiBluetoothRouter::apply_bluetooth_observation(&mut endpoints, Some(
+            "Bluetooth:\n    Connected:\n        JBL GO 2:\n    Not Connected:\n        JBL GO:\n"));
+        assert!(
+            endpoints
+                .iter()
+                .find(|e| e.name == "JBL GO 2")
+                .unwrap()
+                .connected
+        );
+        assert_eq!(
+            endpoints
+                .iter()
+                .find(|e| e.name == "JBL GO")
+                .unwrap()
+                .connection_status,
+            ConnectionStatus::Disconnected
+        );
+        assert_eq!(endpoints[0].connection_status, ConnectionStatus::Unknown);
+        MultiBluetoothRouter::apply_bluetooth_observation(
+            &mut endpoints,
+            Some("Not Connected:\n    JBL GO 2:\n"),
+        );
+        assert!(
+            !endpoints
+                .iter()
+                .find(|e| e.name == "JBL GO 2")
+                .unwrap()
+                .connected
+        );
+        assert_eq!(
+            plan,
+            endpoints
+                .iter()
+                .map(|e| e.planned_enabled)
+                .collect::<Vec<_>>()
+        );
+    }
+
+    #[test]
+    fn failed_empty_or_unrecognized_discovery_is_unknown() {
+        let mut endpoints =
+            MultiBluetoothRouter::fleet_endpoints(MultiBluetoothTopology::FullConstellationWall);
+        for input in [
+            None,
+            Some(""),
+            Some("malformed"),
+            Some("Connected:\n    JBL GO 2 extra:\n"),
+            Some("    Connected:\nOther controller:\n        JBL GO 2:\n"),
+        ] {
+            for endpoint in &mut endpoints {
+                endpoint.connected = true;
+                endpoint.connection_status = ConnectionStatus::Connected;
+            }
+            MultiBluetoothRouter::apply_bluetooth_observation(&mut endpoints, input);
+            assert!(endpoints
+                .iter()
+                .all(|e| !e.connected && e.connection_status == ConnectionStatus::Unknown));
+        }
+    }
+
+    #[test]
+    fn missing_routing_bridge_is_unavailable() {
+        let missing = std::env::temp_dir().join(format!(
+            "8b-is-music-missing-bridge-{}-{}.swift",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        assert!(!missing.exists());
+        let result = MultiBluetoothRouter::apply_routing_script(&missing);
+        assert!(
+            result.is_err(),
+            "Missing bridge must not report routing success"
+        );
+    }
+
+    #[test]
     fn multi_bluetooth_router_proves_ct000_and_compensates_latency() {
-        let mut router = MultiBluetoothRouter::new(MultiBluetoothTopology::FullConstellationWall);
+        let mut router =
+            MultiBluetoothRouter::planned(MultiBluetoothTopology::FullConstellationWall);
         let report = router.report();
         assert!(report.ct000_proof.theorem_holds);
         assert!(report.ct000_proof.keeper_canon_verified);
-        assert!(report.ct000_proof.hfp_24khz_input_blocked);
-        assert!(report.active_endpoints >= 4);
+        assert!(report.ct000_proof.hfp_24khz_input_blocked.is_none());
+        assert!(report.ct000_proof.default_input_locked_to.is_none());
+        assert_eq!(
+            report.ct000_proof.evidence_scope,
+            "static-policy-model-only"
+        );
+        let json = serde_json::to_value(&report).unwrap();
+        assert!(json["ct000_proof"]["hfp_24khz_input_blocked"].is_null());
+        assert!(json["ct000_proof"]["default_input_locked_to"].is_null());
+        assert!(report.planned_endpoints >= 4);
+        assert_eq!(report.max_bluetooth_latency_ms, 38.0);
+        assert_eq!(report.active_endpoints, 0);
+        assert!(
+            report
+                .endpoints
+                .iter()
+                .filter(|e| e.planned_enabled)
+                .count()
+                >= 4
+        );
 
         let jack = report
             .endpoints
