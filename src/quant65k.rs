@@ -201,7 +201,7 @@ impl Quant65kEngine {
 
     /// Packs balanced trits `{-1, 0, +1}` into `u32` SWAR words (`16` trits/word: `00 -> -1`, `01 -> 0`, `10 -> +1`).
     pub fn pack_u32_words(trits: &[i8]) -> Vec<u32> {
-        let words = (trits.len() + TRITS_PER_U32 - 1) / TRITS_PER_U32;
+        let words = trits.len().div_ceil(TRITS_PER_U32);
         let mut out = Vec::with_capacity(words);
         for chunk in trits.chunks(TRITS_PER_U32) {
             let mut w = 0u32;
@@ -458,7 +458,7 @@ impl Quant65kEngine {
 
         let mut hasher = Sha256::new();
         hasher.update(&self.packed_2bit);
-        hasher.update(&wave_bytes);
+        hasher.update(wave_bytes);
         let sha256_seal = format!("{:x}", hasher.finalize());
 
         let dyadic_depth = (self.total_layers as f64).log2().ceil() as usize;

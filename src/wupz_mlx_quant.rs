@@ -151,7 +151,7 @@ pub fn execute_wupz_linker_pass() -> WupzLinkerPassReport {
     let base_bytes = pack_into(&base_plan, &mut arena_base).expect("wupz base pack_into");
     let hot_bytes = pack_into(&hot_plan, &mut arena_hot).expect("wupz hot pack_into");
 
-    let magic_ok = &hot_bytes[..4] == &MAGIC && hot_bytes[4] == PLAN_VERSION;
+    let magic_ok = hot_bytes[..4] == MAGIC && hot_bytes[4] == PLAN_VERSION;
     let fold = xor_fold(hot_bytes);
     let diff = byte_diff(base_bytes, hot_bytes);
     let bits = popcount(hot_bytes);
@@ -250,7 +250,7 @@ pub fn mlx_quant_neon_sdot_singularity(a_packed: &[u8; 16], b_packed: &[u8; 16])
             out("v4") _, out("v5") _, out("v6") _, out("v7") _, out("v8") _,
             options(nostack)
         );
-        return (out_lanes, true);
+        (out_lanes, true)
     }
 
     #[cfg(not(target_arch = "aarch64"))]

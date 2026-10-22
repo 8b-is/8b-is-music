@@ -336,6 +336,7 @@ impl ZenoDjUltraEngine {
 
     /// Executes the `IOuQT` (`qdecorators::Uq` + `qwave_core::quanttern`) crossbar verification
     /// and `ZENO` (`wupz_core::arena::zeroize_slice` + `zeno_asymptotic_limit`) audit.
+    #[allow(clippy::manual_swap)]
     pub fn verify_zeno_iouqt(&mut self) -> ZenoDjUltraReport {
         // 1. Run `qdecorators::Uq` SIMD GEMM across the 6 output buses × 8 input/deck features
         let n_in = 8;

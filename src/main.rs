@@ -16,7 +16,7 @@ use eight_b_is_music::{
     DEFAULT_QUANT65K_PLUS_LAYERS,
 };
 use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 fn parse_topology(val: &str) -> MultiBluetoothTopology {
@@ -401,7 +401,7 @@ fn main() {
             println!("    • CT-000 & QWave     : CT-000={} ({}) | QWave 79B Precious={} | ZA-0006 Zeroized={}",
                 omni.ct000_momma_bear_omni_holds, omni.guaranteeing_omni_policy, omni.qwave_79b_precious_tau0_verified, omni.zeno_za0006_volatile_zeroized);
 
-            let wav_file = if out_path == PathBuf::from("8b-is-music-master.wav") {
+            let wav_file = if out_path == Path::new("8b-is-music-master.wav") {
                 PathBuf::from("g6-shiva-cabin-sanctuary.wav")
             } else {
                 out_path
