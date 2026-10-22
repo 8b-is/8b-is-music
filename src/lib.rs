@@ -124,10 +124,35 @@ pub fn triad_feed(layers: usize, topology: MultiBluetoothTopology) -> serde_json
             "bell_ghz": full.sota_mesh.quantum_bell_probabilities,
         },
         "engine": {
-            "ct000_routing_holds": full.bluetooth.ct000_proof.theorem_holds,
+            "ct000_model_holds": full.bluetooth.ct000_proof.theorem_holds,
+            "ct000_evidence_scope": full.bluetooth.ct000_proof.evidence_scope,
             "ct000_family_holds": full.momma_bear_omni.ct000_momma_bear_omni_holds,
-            "keeper_canon": full.bluetooth.ct000_proof.keeper_canon_verified,
+            "keeper_canon_model": full.bluetooth.ct000_proof.keeper_canon_verified,
             "qwave_79b_precious": full.momma_bear_omni.qwave_79b_precious_tau0_verified,
+            "routing_host_verified": false,
+            "observed_connected": full.bluetooth.active_endpoints,
+            "planned_endpoints": full.bluetooth.planned_endpoints,
         },
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn triad_feed_reports_ct000_as_model_check_not_host_routing() {
+        let feed = triad_feed(8, MultiBluetoothTopology::FullConstellationWall);
+        let full = build_full_system_report(8, MultiBluetoothTopology::FullConstellationWall);
+        let engine = &feed["engine"];
+        assert_eq!(
+            engine["ct000_model_holds"],
+            serde_json::json!(full.bluetooth.ct000_proof.theorem_holds)
+        );
+        assert!(engine.get("ct000_routing_holds").is_none());
+        assert_eq!(engine["ct000_evidence_scope"], serde_json::json!(full.bluetooth.ct000_proof.evidence_scope));
+        assert_eq!(engine["routing_host_verified"], serde_json::json!(false));
+        assert_eq!(engine["observed_connected"], serde_json::json!(full.bluetooth.active_endpoints));
+        assert_eq!(engine["planned_endpoints"], serde_json::json!(full.bluetooth.planned_endpoints));
+    }
 }
