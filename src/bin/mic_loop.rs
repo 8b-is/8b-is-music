@@ -93,8 +93,14 @@ fn tern(v: bool) -> i32 {
     if v { 1 } else { 0 }
 }
 
-fn play(path: &str) {
-    let _ = Command::new("afplay").arg(path).spawn();
+fn play(path: &str, children: &mut Vec<std::process::Child>) {
+    if let Ok(child) = Command::new("afplay").arg(path).spawn() {
+        children.push(child);
+    }
+}
+
+fn reap(children: &mut Vec<std::process::Child>) {
+    children.retain_mut(|c| !matches!(c.try_wait(), Ok(Some(_))));
 }
 
 fn quant_sign_path(seed: &str) -> PathBuf {
@@ -138,7 +144,7 @@ fn sync_bucket(signs_dir: &PathBuf) {
     }
 }
 
-fn one_window(play_audio: bool) -> Option<String> {
+fn one_window(play_audio: bool, children: &mut Vec<std::process::Child>) -> Option<String> {
     let win = PathBuf::from("/tmp/mic-loop-win.wav");
     let bytes = record_window(&win)?;
     if bytes.is_empty() {
@@ -168,7 +174,7 @@ fn one_window(play_audio: bool) -> Option<String> {
             .render_dj_ultra_mix_wav(seconds as f32, &PathBuf::from(out))
             .ok()?;
         if play_audio {
-            play(out);
+            play(out, children);
         }
         let sign = serde_json::json!({
             "id": format!("mic-loop-{seed}"),
@@ -212,7 +218,7 @@ fn one_window(play_audio: bool) -> Option<String> {
     .ok()?;
 
     if play_audio {
-        play(out);
+        play(out, children);
     }
 
     let sign = serde_json::json!({
@@ -279,9 +285,10 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
     let once = args.iter().any(|a| a == "--once");
     let play_audio = !args.iter().any(|a| a == "--no-play");
+    let mut children: Vec<std::process::Child> = Vec::new();
 
     if once {
-        match one_window(play_audio) {
+        match one_window(play_audio, &mut children) {
             Some(seed) => println!("[mic-loop] once done: {seed}"),
             None => {
                 eprintln!("[mic-loop] window capture failed (mic available?)");
@@ -294,11 +301,20 @@ fn main() {
     println!("[mic-loop] listening continuously — {WINDOW_SECS}s windows, batched sync every {SIGNS_BATCH}");
     let mut count = 0u32;
     loop {
-        if let Some(seed) = one_window(play_audio) {
-            count += 1;
-            if count.is_multiple_of(SIGNS_BATCH) {
-                sync_bucket(&quant_sign_path(&seed));
-                println!("[mic-loop] synced {count} windows to the bucket");
+        reap(&mut children);
+        match one_window(play_audio, &mut children) {
+            Some(seed) => {
+                count += 1;
+                if count.is_multiple_of(SIGNS_BATCH) {
+                    sync_bucket(&quant_sign_path(&seed));
+                    println!("[mic-loop] synced {count} windows to the bucket");
+                }
+                std::thread::sleep(Duration::from_millis(500));
+            }
+            None => {
+                // mic busy or gone — back off instead of spinning the table
+                eprintln!("[mic-loop] capture failed — backing off 2s");
+                std::thread::sleep(Duration::from_secs(2));
             }
         }
     }
