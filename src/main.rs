@@ -110,7 +110,7 @@ fn main() {
 
     // Routing is a separate explicit action, including when JSON output is selected.
     if apply_live {
-        if !matches!(subcmd, "bluetooth" | "dj" | "zeno" | "iouqt" | "render" | "triangle" | "family+1" | "ultralovegod" | "sensei" | "frequenci" | "frequencies" | "youtube" | "youtube-full" | "/youtube-full") {
+        if !matches!(subcmd, "bluetooth" | "dj" | "zeno" | "iouqt" | "render" | "triangle" | "family+1" | "ultralovegod" | "sensei" | "frequenci" | "frequencies" | "architect" | "tibetan" | "tibetan-omni" | "kompress-omni" | "youtube" | "youtube-full" | "/youtube-full") {
             eprintln!("--apply-live is unsupported for this command");
             std::process::exit(2);
         }
@@ -245,11 +245,13 @@ fn main() {
                 );
             }
         }
-        "render" | "triangle" | "family+1" | "ultralovegod" | "sensei" | "frequenci" | "frequencies" => {
+        "render" | "triangle" | "family+1" | "ultralovegod" | "sensei" | "frequenci" | "frequencies" | "architect" | "tibetan" | "tibetan-omni" | "kompress-omni" => {
             if subcmd == "triangle" || subcmd == "family+1" {
                 track = SynthTrack::TriangleFamilyPlusOne;
             } else if matches!(subcmd, "ultralovegod" | "sensei" | "frequenci" | "frequencies") {
                 track = SynthTrack::UltralovegodSenseiOfTouch;
+            } else if matches!(subcmd, "architect" | "tibetan" | "tibetan-omni" | "kompress-omni") {
+                track = SynthTrack::ArchitectNeoTrinityTibetanOmni;
             }
             let summary = render_wav_track(track, seconds, layers, topology, &out_path)
                 .expect("Failed to render WAV track");
@@ -274,6 +276,11 @@ fn main() {
                     println!("   • <3 [+1] 639.0 Hz × 852.0 Hz      : Dual-Harmonic Chord (Outer Orbit × Inner Curve)");
                     println!("   • ~~~~    0.125 Hz (4s In · 4s Out): RIVA Breath Phase-Lock & Lemniscate ∞ Glide");
                     println!("   • <<<>>>  963.0 Hz + 108/216 Hz    : Crown Expansion & Sacred Afterglow Ma (間)\n");
+                } else if track == SynthTrack::ArchitectNeoTrinityTibetanOmni {
+                    println!("   ཨོཾ · E=mc² · {{-1, 0, +1}} · {{<3,<3,<3}}+1 :: ARCHITECT · NEO · TRINITY ~ TIBETAN OMNI");
+                    println!("   • 🔔 Tibetan Singing Bowl & OM MANI PADME HUM : 144 / 288 (Dad △) / 432 (Peter) / 528 (Mom *) / 648 / 864 Hz");
+                    println!("   • ⚡ E=mc² → Clear Light (Ösel) Transmutation : 108 → 216 → 324 → 432 → 540 → 648 → 972 Hz");
+                    println!("   • 💗 Neo ⨯ Trinity Aboard the Logos Bell      : 261.63 / 329.63 / 392.00 / 493.88 / 587.33 / 783.99 Hz ({{<3,<3,<3}}+1)\n");
                 }
                 println!("  • Track                : {}", summary.track_title);
                 println!("  • Output WAV           : {}", summary.output_path);

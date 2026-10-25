@@ -386,6 +386,8 @@ pub enum SynthTrack {
     TriangleFamilyPlusOne,
     /// `ULTRALOVEGOD — THE SENSEI OF TOUCH <3<3<3~~~~<<<>>>` (`432/528/639/852/963 Hz` + `0.73 Hz` QWave + `4s In · 4s Out` RIVA Breath Phase-Lock).
     UltralovegodSenseiOfTouch,
+    /// `ARCHITECT · NEO · TRINITY ~ BIBLE · OPPENHEIMER (E=mc²) ──► TIBETAN BUDDHISM OMNI · {<3,<3,<3}+1` (`144/288/432/528/648/864/972 Hz` Three Kayas + Singing Bowl + Ösel Clear Light).
+    ArchitectNeoTrinityTibetanOmni,
 }
 
 impl SynthTrack {
@@ -401,6 +403,10 @@ impl SynthTrack {
             }
             "ultralovegod" | "sensei" | "sensei-of-touch" | "frequenci" | "frequencies"
             | "touch" | "<3<3<3~~~~<<<>>>" => Self::UltralovegodSenseiOfTouch,
+            "architect" | "neo" | "oppenheimer" | "tibetan" | "tibetan-omni" | "kaya"
+            | "three-kayas" | "emc2" | "osel" | "kompress-omni" => {
+                Self::ArchitectNeoTrinityTibetanOmni
+            }
             _ => Self::FutureWeRemember,
         }
     }
@@ -418,6 +424,9 @@ impl SynthTrack {
             }
             Self::UltralovegodSenseiOfTouch => {
                 "ULTRALOVEGOD — THE SENSEI OF TOUCH <3<3<3~~~~<<<>>> (432/528/639/852/963 Hz · 0.73 Hz QWave · 4s/4s Breath Lock)"
+            }
+            Self::ArchitectNeoTrinityTibetanOmni => {
+                "ARCHITECT · NEO · TRINITY ~ BIBLE · OPPENHEIMER (E=mc²) ──► ⟨(((ONTOLOGY: TIBETAN BUDDHISM)))⟩ ~> OMNI · {<3,<3,<3}+1"
             }
         }
     }
@@ -778,6 +787,86 @@ pub fn render_wav_track_seeded(
                         + chord_852 * lemniscate_pan
                         + crown_963
                         + silk_wave * lemniscate_pan
+                        + 0.14 * q65_r
+                        + fifike_r);
+                (l, r)
+            }
+            SynthTrack::ArchitectNeoTrinityTibetanOmni => {
+                let tau = std::f32::consts::TAU;
+                let frac_2_pi = std::f32::consts::FRAC_2_PI;
+
+                // 0.73 Hz QWave Consciousness Gate & 0.125 Hz (8s) Rigpa Breath Wave
+                let qwave_073 = 0.68 + 0.32 * (tau * 0.73 * t).sin();
+                let rigpa_breath = 0.65 + 0.35 * (tau * 0.125 * t - std::f32::consts::FRAC_PI_2).sin();
+
+                // [-1 -> 0 -> +1] Three Kayas Transmutation Envelope across the track
+                // 1. Tibetan Singing Bowl Strikes every 4.0s (144 / 288 / 432 / 528 / 648 / 864 Hz)
+                let bowl_t = t % 4.0;
+                let bowl_env = (1.0 - (-22.0 * bowl_t).exp()) * (-0.65 * bowl_t).exp();
+                let bowl_144 = (tau * 144.0 * t).sin() * 0.16 * bowl_env;
+                let bowl_288_dad = frac_2_pi * (tau * 288.0 * t).sin().asin() * 0.18 * (0.55 + 0.45 * bowl_env);
+                let bowl_432_peter_l = (tau * 432.0 * t).sin() * 0.16 * rigpa_breath;
+                let bowl_438_peter_r = (tau * 438.0 * t).sin() * 0.16 * rigpa_breath;
+                let bowl_528_mom = (tau * 528.0 * t + 0.25 * (tau * 0.365 * t).sin()).sin() * 0.15 * qwave_073;
+                let bowl_648 = (tau * 648.0 * t).sin() * 0.10 * bowl_env;
+                let bowl_864 = (tau * 864.0 * t).sin() * 0.07 * bowl_env;
+
+                // 2. E=mc² -> Clear Light (Ösel) Transmutation Chord (108 -> 216 -> 324 -> 432 -> 540 -> 648 -> 972 Hz)
+                let osel_notes: [f32; 7] = [108.0, 216.0, 324.0, 432.0, 540.0, 648.0, 972.0];
+                let osel_idx = ((t / 0.8) as usize) % osel_notes.len();
+                let osel_local_t = t % 0.8;
+                let osel_hz = osel_notes[osel_idx];
+                let osel_env = (1.0 - (-25.0 * osel_local_t).exp()) * (-2.0 * osel_local_t).exp();
+                let osel_chord = ((tau * osel_hz * t).sin() * 0.7 + (tau * (osel_hz * 0.5) * t).sin() * 0.3)
+                    * osel_env
+                    * 0.15;
+
+                // 3. Neo x Trinity Aboard the Logos Bell ({<3,<3,<3}+1 Major-9th & Lydian Starlight Stack)
+                let logos_notes: [f32; 6] = [261.63, 329.63, 392.00, 493.88, 587.33, 783.99];
+                let logos_idx = ((t / 1.2) as usize) % logos_notes.len();
+                let logos_local_t = t % 1.2;
+                let logos_hz = logos_notes[logos_idx];
+                let logos_env = (1.0 - (-30.0 * logos_local_t).exp()) * (-2.4 * logos_local_t).exp();
+                let logos_bell = (tau * logos_hz * t).sin() * logos_env * 0.12;
+
+                // Lemniscate `∞` Stereo Pan (`{−1: Architect} ──► {0: Śūnyatā} ──► {+1: Trinity Ösel}`)
+                let omega = tau * 0.20 * t;
+                let sin_w = omega.sin();
+                let pan = 0.5 + 0.38 * (omega.cos() / (1.0 + sin_w * sin_w));
+
+                let (q65_l, q65_r) = quant65k.sample_realtime_48k(frame_idx, 432.0);
+                let (fifike_l, fifike_r) =
+                    crate::wupz_mlx_quant::sample_fifike_purr_and_mlx_harmonic(t);
+
+                let fade = if t < 2.0 {
+                    0.5 * (1.0 - (std::f32::consts::PI * t / 2.0).cos())
+                } else if t > (duration_seconds - 3.0).max(2.1) {
+                    let rem = (duration_seconds - t).max(0.0);
+                    0.5 * (1.0 - (std::f32::consts::PI * rem / 3.0).cos())
+                } else {
+                    1.0
+                };
+
+                let l = fade
+                    * (bowl_144
+                        + bowl_288_dad * 0.90
+                        + bowl_432_peter_l
+                        + bowl_528_mom * 0.92
+                        + bowl_648 * (1.0 - pan)
+                        + bowl_864 * 0.8
+                        + osel_chord * (1.0 - pan)
+                        + logos_bell * pan
+                        + 0.14 * q65_l
+                        + fifike_l);
+                let r = fade
+                    * (bowl_144
+                        + bowl_288_dad * 0.85
+                        + bowl_438_peter_r
+                        + bowl_528_mom
+                        + bowl_648 * pan
+                        + bowl_864
+                        + osel_chord * pan
+                        + logos_bell * (1.0 - pan)
                         + 0.14 * q65_r
                         + fifike_r);
                 (l, r)
