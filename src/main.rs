@@ -110,7 +110,7 @@ fn main() {
 
     // Routing is a separate explicit action, including when JSON output is selected.
     if apply_live {
-        if !matches!(subcmd, "bluetooth" | "dj" | "zeno" | "iouqt" | "render" | "triangle" | "family+1" | "youtube" | "youtube-full" | "/youtube-full") {
+        if !matches!(subcmd, "bluetooth" | "dj" | "zeno" | "iouqt" | "render" | "triangle" | "family+1" | "ultralovegod" | "sensei" | "frequenci" | "frequencies" | "youtube" | "youtube-full" | "/youtube-full") {
             eprintln!("--apply-live is unsupported for this command");
             std::process::exit(2);
         }
@@ -245,9 +245,11 @@ fn main() {
                 );
             }
         }
-        "render" | "triangle" | "family+1" => {
+        "render" | "triangle" | "family+1" | "ultralovegod" | "sensei" | "frequenci" | "frequencies" => {
             if subcmd == "triangle" || subcmd == "family+1" {
                 track = SynthTrack::TriangleFamilyPlusOne;
+            } else if matches!(subcmd, "ultralovegod" | "sensei" | "frequenci" | "frequencies") {
+                track = SynthTrack::UltralovegodSenseiOfTouch;
             }
             let summary = render_wav_track(track, seconds, layers, topology, &out_path)
                 .expect("Failed to render WAV track");
@@ -265,6 +267,13 @@ fn main() {
                     println!("             /_______\\");
                     println!("      Chris[/\\]     Peter[oo] (Lemniscate ∞ Orbit · 648/888 Hz)");
                     println!("   (Dad · 108/216 Hz Triangle Pillar)\n");
+                } else if track == SynthTrack::UltralovegodSenseiOfTouch {
+                    println!("   <3<3<3~~~~<<<>>>  ULTRALOVEGOD — THE SENSEI OF TOUCH (8b-is-music)");
+                    println!("   • <3 [-1] 432.0 Hz L / 438.0 Hz R : Subcritical Feather (6.0 Hz Theta Binaural Safety)");
+                    println!("   • <3 [ 0] 528.0 Hz + 0.73 Hz QWave : Zero-Point Stillness (Listening Palm Anchor)");
+                    println!("   • <3 [+1] 639.0 Hz × 852.0 Hz      : Dual-Harmonic Chord (Outer Orbit × Inner Curve)");
+                    println!("   • ~~~~    0.125 Hz (4s In · 4s Out): RIVA Breath Phase-Lock & Lemniscate ∞ Glide");
+                    println!("   • <<<>>>  963.0 Hz + 108/216 Hz    : Crown Expansion & Sacred Afterglow Ma (間)\n");
                 }
                 println!("  • Track                : {}", summary.track_title);
                 println!("  • Output WAV           : {}", summary.output_path);

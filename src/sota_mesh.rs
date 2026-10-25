@@ -384,6 +384,8 @@ pub enum SynthTrack {
     AlexandraSanctuary,
     /// `Triangle Track :: Mom+Dad+Son ~=== Alex*, Chris[/\], Peter[oo] ~--- pocoo.vaked.dev/demos/book/family+1`.
     TriangleFamilyPlusOne,
+    /// `ULTRALOVEGOD — THE SENSEI OF TOUCH <3<3<3~~~~<<<>>>` (`432/528/639/852/963 Hz` + `0.73 Hz` QWave + `4s In · 4s Out` RIVA Breath Phase-Lock).
+    UltralovegodSenseiOfTouch,
 }
 
 impl SynthTrack {
@@ -397,6 +399,8 @@ impl SynthTrack {
             "triangle" | "family+1" | "family-plus-1" | "family" | "mom+dad+son" | "trinity" => {
                 Self::TriangleFamilyPlusOne
             }
+            "ultralovegod" | "sensei" | "sensei-of-touch" | "frequenci" | "frequencies"
+            | "touch" | "<3<3<3~~~~<<<>>>" => Self::UltralovegodSenseiOfTouch,
             _ => Self::FutureWeRemember,
         }
     }
@@ -411,6 +415,9 @@ impl SynthTrack {
             }
             Self::TriangleFamilyPlusOne => {
                 "Triangle Track :: Mom+Dad+Son ~=== Alex[*], Chris[/\\], Peter[oo] ~--- pocoo.vaked.dev/demos/book/family+1"
+            }
+            Self::UltralovegodSenseiOfTouch => {
+                "ULTRALOVEGOD — THE SENSEI OF TOUCH <3<3<3~~~~<<<>>> (432/528/639/852/963 Hz · 0.73 Hz QWave · 4s/4s Breath Lock)"
             }
         }
     }
@@ -684,6 +691,97 @@ pub fn render_wav_track_seeded(
                         + fifike_r);
                 (l, r)
             }
+            SynthTrack::UltralovegodSenseiOfTouch => {
+                let tau = std::f32::consts::TAU;
+                let frac_2_pi = std::f32::consts::FRAC_2_PI;
+
+                // ~~~~ 1. RIVA Breath Phase-Lock (4s Inhale · 4s Exhale = 0.125 Hz continuous sine wave)
+                let riva_breath = 0.64 + 0.36 * (tau * 0.125 * t - std::f32::consts::FRAC_PI_2).sin();
+                // QWave 0.73 Hz Consciousness Gate
+                let qwave_073 = 0.70 + 0.30 * (tau * 0.73 * t).sin();
+
+                // <3 #1: [-1] SUBCRITICAL FEATHER (432.0 Hz L / 438.0 Hz R -> 6.0 Hz Theta Binaural Safety & Awakening)
+                let feather_432_l = (tau * 432.0 * t).sin() * 0.16 * riva_breath;
+                let feather_438_r = (tau * 438.0 * t).sin() * 0.16 * riva_breath;
+                let warm_palm_108 = (tau * 108.0 * t).sin() * 0.22;
+                let warm_palm_216 = frac_2_pi * (tau * 216.0 * t).sin().asin() * 0.18 * riva_breath;
+
+                // <3 #2: [ 0] ZERO-POINT STILLNESS (528.0 Hz Golden Reconcile + Listening Palm Anchor)
+                let stillness_528_l = (tau * 528.0 * t + 0.22 * (tau * 0.365 * t).sin()).sin()
+                    * 0.14
+                    * qwave_073;
+                let stillness_528_r = (tau * 528.5 * t + 0.22 * (tau * 0.365 * t).cos()).sin()
+                    * 0.14
+                    * qwave_073;
+
+                // <3 #3: [+1] SUPERCRITICAL DUAL-HARMONIC CHORD (639.0 Hz Outer Orbit × 852.0 Hz Inner Curve)
+                // Smoothly blooms across the middle of the journey (`<<<` expansion -> `>>>` afterglow Ma 間)
+                let bloom = (std::f32::consts::PI * progress).sin().powi(2);
+                let chord_639 = (tau * 639.0 * t).sin() * 0.12 * (0.45 + 0.55 * bloom);
+                let chord_852 = (tau * 852.0 * t + 0.35 * (tau * 1.46 * t).sin()).sin()
+                    * 0.10
+                    * (0.35 + 0.65 * bloom);
+
+                // <<<>>> CROWN & AFTERGLOW MA (間) (963.0 Hz Celestial Halo + Pentatonic Silk Droplets)
+                let crown_963 = (tau * 963.0 * t).sin() * 0.08 * bloom * riva_breath;
+
+                // Lemniscate of Bernoulli `∞` Figure-8 Stereo Glide (`~~~~`)
+                let omega = tau * 0.18 * t;
+                let sin_w = omega.sin();
+                let lemniscate_pan = 0.5 + 0.36 * (omega.cos() / (1.0 + sin_w * sin_w));
+
+                // Silk-touch melodic wave notes in 432 Hz Just Intonation cycling smoothly every 1.0s
+                let silk_notes: [f32; 8] = [
+                    432.0, 528.0, 639.0, 648.0, 852.0, 648.0, 963.0, 528.0,
+                ];
+                let note_idx = ((t / 1.0) as usize) % silk_notes.len();
+                let note_t = t % 1.0;
+                let silk_hz = silk_notes[note_idx];
+                // Smooth RC-like attack and exponential silk release (zero clipping, zero harsh edges)
+                let silk_env = (1.0 - (-18.0 * note_t).exp()) * (-2.4 * note_t).exp();
+                let silk_wave =
+                    ((tau * silk_hz * t).sin() * 0.72 + (tau * (silk_hz * 0.5) * t).sin() * 0.28)
+                        * silk_env
+                        * 0.16;
+
+                let (q65_l, q65_r) = quant65k.sample_realtime_48k(frame_idx, 432.0);
+                let (fifike_l, fifike_r) =
+                    crate::wupz_mlx_quant::sample_fifike_purr_and_mlx_harmonic(t);
+
+                // Smooth cosine fade-in (2.0s) and sacred afterglow Ma 間 fade-out (3.0s)
+                let fade = if t < 2.0 {
+                    0.5 * (1.0 - (std::f32::consts::PI * t / 2.0).cos())
+                } else if t > (duration_seconds - 3.0).max(2.1) {
+                    let rem = (duration_seconds - t).max(0.0);
+                    0.5 * (1.0 - (std::f32::consts::PI * rem / 3.0).cos())
+                } else {
+                    1.0
+                };
+
+                let l = fade
+                    * (warm_palm_108
+                        + warm_palm_216
+                        + feather_432_l
+                        + stillness_528_l
+                        + chord_639 * 0.9
+                        + chord_852 * (1.0 - lemniscate_pan)
+                        + crown_963 * 0.85
+                        + silk_wave * (1.0 - lemniscate_pan)
+                        + 0.14 * q65_l
+                        + fifike_l);
+                let r = fade
+                    * (warm_palm_108
+                        + warm_palm_216
+                        + feather_438_r
+                        + stillness_528_r
+                        + chord_639 * 0.85
+                        + chord_852 * lemniscate_pan
+                        + crown_963
+                        + silk_wave * lemniscate_pan
+                        + 0.14 * q65_r
+                        + fifike_r);
+                (l, r)
+            }
         };
 
         let (eq_l, eq_r) = eq.apply_stereo(raw_l, raw_r);
@@ -806,5 +904,29 @@ mod tests {
         assert!(status.spherepop_pops >= 2);
         assert_eq!(status.quantum_bell_probabilities.len(), 8);
         assert!(status.dynamic_eq.quanttern_tag.starts_with("qt:"));
+    }
+
+    #[test]
+    fn ultralovegod_sensei_of_touch_renders_unclipped_stereo() {
+        assert_eq!(
+            SynthTrack::from_name("ultralovegod"),
+            SynthTrack::UltralovegodSenseiOfTouch
+        );
+        assert_eq!(
+            SynthTrack::from_name("frequenci"),
+            SynthTrack::UltralovegodSenseiOfTouch
+        );
+        let out = std::env::temp_dir().join("ultralovegod-sensei-test.wav");
+        let summary = render_wav_track(
+            SynthTrack::UltralovegodSenseiOfTouch,
+            0.5,
+            8192,
+            MultiBluetoothTopology::FullConstellationWall,
+            &out,
+        )
+        .unwrap();
+        assert!(summary.peak_left > 0.05 && summary.peak_left <= 1.0);
+        assert!(summary.peak_right > 0.05 && summary.peak_right <= 1.0);
+        let _ = std::fs::remove_file(out);
     }
 }
