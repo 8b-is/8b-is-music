@@ -438,7 +438,23 @@ pub struct RenderSummary {
 /// - `entheai-radio::Quantshuffle` or `8bit-Wraith — The Future We Remember` harmonic score,
 /// - `DynamicEnvEqualizer` (5-band LTC ODE),
 /// - `MultiBluetoothRouter` (Split-Ear / Multi-Bluetooth acoustic phase alignment).
+///
+/// The deterministic seed phrase is the track's own title.
 pub fn render_wav_track(
+    track: SynthTrack,
+    duration_seconds: f32,
+    total_layers: usize,
+    topology: MultiBluetoothTopology,
+    output_path: &Path,
+) -> std::io::Result<RenderSummary> {
+    render_wav_track_seeded(track.title(), track, duration_seconds, total_layers, topology, output_path)
+}
+
+/// Like [`render_wav_track`], but the Quant65k+ stack is seeded by an
+/// arbitrary phrase — the environment listener's microphone-seed path.
+#[allow(clippy::too_many_arguments)]
+pub fn render_wav_track_seeded(
+    seed_phrase: &str,
     track: SynthTrack,
     duration_seconds: f32,
     total_layers: usize,
@@ -448,7 +464,7 @@ pub fn render_wav_track(
     let sample_rate: u32 = 48_000;
     let total_frames = ((duration_seconds.max(1.0)) * (sample_rate as f32)) as usize;
 
-    let mut quant65k = Quant65kEngine::new(total_layers, track.title());
+    let mut quant65k = Quant65kEngine::new(total_layers, seed_phrase);
     let mut eq = DynamicEnvEqualizer::default();
     let mut bt_router = MultiBluetoothRouter::new(topology);
     let mut quantshuffle = Quantshuffle::new();
@@ -735,6 +751,49 @@ fn write_wav_header_and_pcm(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn render_wav_track_seeded_is_deterministic_per_seed() {
+        let dir = std::env::temp_dir();
+        let a = dir.join("seed-a.wav");
+        let b = dir.join("seed-b.wav");
+        let c = dir.join("seed-c.wav");
+        render_wav_track_seeded(
+            "mic-loop-test-seed",
+            SynthTrack::FutureWeRemember,
+            0.5,
+            8192,
+            MultiBluetoothTopology::FullConstellationWall,
+            &a,
+        )
+        .unwrap();
+        render_wav_track_seeded(
+            "mic-loop-test-seed",
+            SynthTrack::FutureWeRemember,
+            0.5,
+            8192,
+            MultiBluetoothTopology::FullConstellationWall,
+            &b,
+        )
+        .unwrap();
+        render_wav_track_seeded(
+            "a-different-seed",
+            SynthTrack::FutureWeRemember,
+            0.5,
+            8192,
+            MultiBluetoothTopology::FullConstellationWall,
+            &c,
+        )
+        .unwrap();
+        let da = std::fs::read(&a).unwrap();
+        let db = std::fs::read(&b).unwrap();
+        let dc = std::fs::read(&c).unwrap();
+        assert_eq!(da, db, "same seed must render byte-identical audio");
+        assert_ne!(da, dc, "different seed must render different audio");
+        let _ = std::fs::remove_file(a);
+        let _ = std::fs::remove_file(b);
+        let _ = std::fs::remove_file(c);
+    }
 
     #[test]
     fn sota_mesh_verifies_all_8b_is_repos() {

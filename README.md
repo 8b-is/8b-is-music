@@ -67,3 +67,18 @@ cargo run --release -- render --track future --seconds 10 --layers 69632 --out f
 `--play` uses the current system output and never configures routing. To request a host routing change, add `--apply-live`; optionally select a reviewed Swift bridge with `--routing-script /path/to/bridge.swift`. Missing or failed bridges exit unsuccessfully before playback. For commands supporting `--json`, this also applies in JSON mode and standard output remains the report; bridge diagnostics go to standard error. Bridge success means the process succeeded, not that hardware enforcement was independently verified.
 
 Version 0.2 changes the report API: input-lock/HFP observations are optional, endpoint plans are separate from connection observations, and DJ `hfp_guard_locked` becomes `planned_hfp_guard`.
+
+## 6. The environment listener (`mic_loop`)
+
+```bash
+cargo run --release --bin mic_loop -- --once    # one 3s window, then exit
+cargo run --release --bin mic_loop             # listen continuously
+```
+
+Every 3-second microphone window is hashed into a deterministic seed phrase
+and rendered as a short Quant65k+ track (`render_wav_track_seeded`) through
+the current system output; every fifth window runs the full 4-in / 6-out DJ
+deck. Each window writes a quant sign (`signs/mic-loop-<seed>.json`) into the
+private `8b-is/music-quant-signs` bucket, synced to git + Hugging Face every
+10 windows. Determinism is pinned by
+`sota_mesh::tests::render_wav_track_seeded_is_deterministic_per_seed`.

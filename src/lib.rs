@@ -41,8 +41,9 @@ pub use shiva_g6::{
     RJTT_TOKYO_HANEDA,
 };
 pub use sota_mesh::{
-    render_wav_track, verify_sota_mesh, DynamicEnvEqualizer, NoiseClass, RenderSummary,
-    SotaCandidate, SotaCapability, SotaMeshStatus, SotaRouter, SynthTrack, WUPZ_EQ_ABI_VERSION,
+    render_wav_track, render_wav_track_seeded, verify_sota_mesh, DynamicEnvEqualizer, NoiseClass,
+    RenderSummary, SotaCandidate, SotaCapability, SotaMeshStatus, SotaRouter, SynthTrack,
+    WUPZ_EQ_ABI_VERSION,
 };
 pub use wupz_mlx_quant::{
     dequantize_ternary_b158, execute_mlx_quant_verification, execute_wupz_linker_pass,
