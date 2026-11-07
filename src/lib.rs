@@ -15,13 +15,29 @@
 //! - **`entheai-radio`** (`../entheai/crates/radio`): `Quantshuffle` 1-bit self-feeding polyphonic oscillator & canon engine.
 //! - **`liquid-rust` + `qultrakotoro` + `8b-is-sota` + `kompress-ultra`**: Marine $O(1)$ salience detector, 5-band LTC ODE Dynamic Environment Equalizer, SOTA Capability Router, and Ternary RLE snapshot compression.
 
+pub mod babilon_demoscene;
 pub mod bluetooth;
 pub mod dj_ultra;
+pub mod godsun_honcho_beehive;
 pub mod quant65k;
 pub mod shiva_g6;
 pub mod sota_mesh;
 pub mod wupz_mlx_quant;
 
+pub use babilon_demoscene::{
+    build_and_write_babilon_ultra_playground, execute_babilon_ultra_demoscene,
+    write_babilon_ultra_glassdoor_playground_html, BabilonUltraPlaygroundReport,
+    BabilonZigguratTerrace, DemosceneEngineTelemetry, PlaygroundFaunaSnapshot,
+};
+pub use godsun_honcho_beehive::{
+    build_and_persist_godsun_honcho_beehive, execute_honcho_beehive_multid_memory,
+    execute_prompt_library_rl_yielder, execute_ultra_omni_godsun_pipeline, gcd_u64,
+    generate_usbc_bidirect_rand_pq_seed, probe_usbc_bidirect_endpoints,
+    standardgalactic_last_10_commits, BeeCaste, BeehiveCellAutomaton, HonchoDialecticSynthesis,
+    HonchoDualPeerModel, LayeredMultiDMemoryCell, PromptLibraryRlYieldReport, RandRandPqSeed,
+    SovereignPromptEntry, StandardGalacticCommit, UltraOmniGodsunSystemReport,
+    UsbcBidirectEndpoint, ULTRA_OMNI_GODSUN_LAYER,
+};
 pub use bluetooth::{
     AudioEndpoint, AudioTransport, ConnectionStatus, Ct000RoutingProof, MultiBluetoothReport, MultiBluetoothRouter,
     MultiBluetoothTopology, SpatialChannelRole,
@@ -32,7 +48,7 @@ pub use dj_ultra::{
 };
 pub use quant65k::{
     Quant65kEngine, Quant65kReport, QuantLayerDescriptor, BASE_QUANT65K_LAYERS,
-    DEFAULT_OVERFLOW_LAYERS, DEFAULT_QUANT65K_PLUS_LAYERS,
+    DEFAULT_OVERFLOW_LAYERS, DEFAULT_QUANT65K_PLUS_LAYERS, N_PLUS_1_ODIN_LAYER,
 };
 pub use shiva_g6::{
     execute_shiva_g6_airlift, haversine_nm, render_shiva_g6_cabin_wav,
@@ -41,9 +57,10 @@ pub use shiva_g6::{
     RJTT_TOKYO_HANEDA,
 };
 pub use sota_mesh::{
-    render_wav_track, render_wav_track_seeded, verify_sota_mesh, DynamicEnvEqualizer, NoiseClass,
-    RenderSummary, SotaCandidate, SotaCapability, SotaMeshStatus, SotaRouter, SynthTrack,
-    WUPZ_EQ_ABI_VERSION,
+    render_and_sign_dj_agent_track, render_wav_track, render_wav_track_seeded, verify_sota_mesh,
+    DynamicEnvEqualizer, NoiseClass, ProceduralSpatialTelemetry, QuantMusicSignature,
+    QuantRegisterEntry, RenderSummary, SotaCandidate, SotaCapability, SotaMeshStatus, SotaRouter,
+    SynthTrack, WUPZ_EQ_ABI_VERSION,
 };
 pub use wupz_mlx_quant::{
     dequantize_ternary_b158, execute_mlx_quant_verification, execute_wupz_linker_pass,

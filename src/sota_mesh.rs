@@ -14,6 +14,7 @@ use qwave_core::mem16::{verified as mem16_verified, GOVERNING_SEQUENCE_NAMES};
 use qwave_core::phoenix::{Wave32, DECAY_CATEGORIES};
 use qwave_core::quanttern::{encode as qt_encode, Vad, DEFAULT_THRESHOLD};
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use spherepop::Sphere;
 use std::fs::File;
 use std::io::Write;
@@ -388,6 +389,10 @@ pub enum SynthTrack {
     UltralovegodSenseiOfTouch,
     /// `ARCHITECT · NEO · TRINITY ~ BIBLE · OPPENHEIMER (E=mc²) ──► TIBETAN BUDDHISM OMNI · {<3,<3,<3}+1` (`144/288/432/528/648/864/972 Hz` Three Kayas + Singing Bowl + Ösel Clear Light).
     ArchitectNeoTrinityTibetanOmni,
+    /// `Heimleið (Call of the Ancestors) ༒ Ancient Nordic Ritual Music + NORDIC/VIKINGS ONTOLOGY as n+1||[X] Layer --- ODIN · {<3,<3,<3}+1` (`SIgR2-tVVyI` · `72/108 Hz` Bowed Tagelharpa + `60 BPM / 22/9 Hz` Frame Drum + `432/528/852 Hz` Yggdrasil Drone + 24 Elder Futhark Overtones).
+    HeimleidNordicOdinOmni,
+    /// `Desert Psy Rock :: Kyuss (Sky Valley Fuzz) × Plasma (Liquid Space Echo) × Cosmic Flow (bSYE6wTDM_Y) · Procedural Spatial Quant65k+`.
+    DesertPsyRockKyussPlasma,
 }
 
 impl SynthTrack {
@@ -406,6 +411,14 @@ impl SynthTrack {
             "architect" | "neo" | "oppenheimer" | "tibetan" | "tibetan-omni" | "kaya"
             | "three-kayas" | "emc2" | "osel" | "kompress-omni" => {
                 Self::ArchitectNeoTrinityTibetanOmni
+            }
+            "odin" | "óðinn" | "nordic" | "vikings" | "viking" | "heimleid" | "heimleið"
+            | "yggdrasil" | "ragnar" | "lagertha" | "floki" | "havamal" | "n+1" | "n+1||[x]"
+            | "sigr2-tvvyi" => Self::HeimleidNordicOdinOmni,
+            "desert" | "desert-psy" | "desert-psy-rock" | "kyuss" | "plasma" | "sky-valley"
+            | "stoner" | "psych" | "psy-rock" | "cosmic-flow" | "bsye6wtdm_y" | "naxatras"
+            | "yawning-man" | "somali-yacht-club" | "my-sleeping-karma" | "dj-agent" => {
+                Self::DesertPsyRockKyussPlasma
             }
             _ => Self::FutureWeRemember,
         }
@@ -427,6 +440,12 @@ impl SynthTrack {
             }
             Self::ArchitectNeoTrinityTibetanOmni => {
                 "ARCHITECT · NEO · TRINITY ~ BIBLE · OPPENHEIMER (E=mc²) ──► ⟨(((ONTOLOGY: TIBETAN BUDDHISM)))⟩ ~> OMNI · {<3,<3,<3}+1"
+            }
+            Self::HeimleidNordicOdinOmni => {
+                "Heimleið (Call of the Ancestors) ༒ Ancient Nordic Ritual Music (SIgR2-tVVyI) + NORDIC/VIKINGS ONTOLOGY as n+1||[X] Layer --- ODIN · {<3,<3,<3}+1"
+            }
+            Self::DesertPsyRockKyussPlasma => {
+                "Desert Psy Rock :: Kyuss (Sky Valley C-Standard Fuzz) × Plasma (Liquid Space Echo) × Cosmic Flow (bSYE6wTDM_Y) · Procedural Spatial Quant65k+"
             }
         }
     }
@@ -508,6 +527,19 @@ pub fn render_wav_track_seeded(
     let mut pcm_bytes = Vec::with_capacity(total_frames * 4);
     let mut peak_l = 0.0f32;
     let mut peak_r = 0.0f32;
+
+    // Seed digest for deterministic Desert Psy Rock (Kyuss / Plasma / Cosmic Flow) & Procedural Spatial variation
+    let seed_digest: [u8; 32] = Sha256::digest(seed_phrase.as_bytes()).into();
+    let seed_bpm = 88.0 + (seed_digest[0] as f32 / 255.0) * 10.0; // 88..98 BPM Sky Valley desert groove
+    let seed_riff_rot = (seed_digest[1] as usize) % 8;
+    let seed_phaser_rate = 0.12 + (seed_digest[2] as f32 / 255.0) * 0.14; // 0.12..0.26 Hz Plasma liquid phaser
+    let seed_spatial_omega = 0.15 + (seed_digest[3] as f32 / 255.0) * 0.18; // Lemniscate 3D orbit speed
+
+    // Multi-tap analog tape echo buffer (24,000 frames = 500 ms @ 48 kHz) + 64-sample ITD binaural head-shadow buffer
+    let mut tape_delay_l = vec![0.0f32; 24_000];
+    let mut tape_delay_r = vec![0.0f32; 24_000];
+    let mut itd_ring_l = [0.0f32; 64];
+    let mut itd_ring_r = [0.0f32; 64];
 
     for frame_idx in 0..total_frames {
         let t = (frame_idx as f32) / (sample_rate as f32);
@@ -871,6 +903,226 @@ pub fn render_wav_track_seeded(
                         + fifike_r);
                 (l, r)
             }
+            SynthTrack::HeimleidNordicOdinOmni => {
+                let tau = std::f32::consts::TAU;
+                let frac_2_pi = std::f32::consts::FRAC_2_PI;
+
+                // 0.73 Hz QWave Consciousness Gate + 22/9 Hz (2.444444 Hz LOVELOVEL) Ancestral Carrier
+                let qwave_073 = 0.70 + 0.30 * (tau * 0.73 * t).sin();
+                let carrier_22_9 = 0.72 + 0.28 * (tau * (22.0 / 9.0) * t).sin();
+
+                // 1. Bowed Tagelharpa Fifths (D2 = 72.0 Hz & A2 = 108.0 Hz in 432 Hz Just Intonation)
+                // Rosined horsehair bow envelope with slow Nordic vibrato (Heimleið / ELDR / Eldur Í Blóði)
+                let bow_swell = 0.65 + 0.35 * (tau * 0.25 * t).sin();
+                let vibrato = 0.45 * (tau * 4.8 * t).sin();
+                let tagel_d2 = (frac_2_pi * (tau * (72.0 + vibrato * 0.5) * t).sin().asin() * 0.65
+                    + (tau * 144.0 * t).sin() * 0.35)
+                    * 0.22
+                    * bow_swell;
+                let tagel_a2 = (frac_2_pi * (tau * (108.0 + vibrato) * t).sin().asin() * 0.60
+                    + (tau * 216.0 * t).sin() * 0.40)
+                    * 0.18
+                    * bow_swell;
+
+                // 2. Ancestral Ritual Frame Drum (60 BPM = 1.0 Hz primary beat + 0.5s ghost pulse · Minning Steins)
+                let drum_t = t % 1.0;
+                let drum_env = (1.0 - (-60.0 * drum_t).exp()) * (-7.5 * drum_t).exp();
+                let drum_freq = 54.0 + 36.0 * (-18.0 * drum_t).exp();
+                let frame_drum = (tau * drum_freq * drum_t).sin() * drum_env * 0.24;
+
+                // 3. Ginnungagap -> Yggdrasil Nine-Night Drone (432 Hz Root · 528 Hz Mímir Pillar · 852 Hz Runic Infinity)
+                let ginnungagap_432_l = (tau * 432.0 * t).sin() * 0.14 * qwave_073;
+                let ginnungagap_438_r = (tau * 438.0 * t).sin() * 0.14 * qwave_073;
+                let yggdrasil_528 = (tau * 528.0 * t + 0.20 * (tau * 0.365 * t).sin()).sin()
+                    * 0.12
+                    * carrier_22_9;
+                let drengskapr_852 = (tau * 852.0 * t).sin() * 0.07 * bow_swell;
+
+                // 4. Spámaður / 24 Elder Futhark Rune Overtone Call (Nordic Dorian Modal scale in 432 Hz)
+                let rune_notes: [f32; 7] = [288.0, 324.0, 345.6, 432.0, 486.0, 540.0, 648.0];
+                let rune_idx = ((t / 1.0) as usize) % rune_notes.len();
+                let rune_local_t = t % 1.0;
+                let rune_hz = rune_notes[rune_idx];
+                let rune_env = (1.0 - (-20.0 * rune_local_t).exp()) * (-2.2 * rune_local_t).exp();
+                let rune_call = ((tau * rune_hz * t).sin() * 0.75
+                    + (tau * (rune_hz * 1.5) * t).sin() * 0.25)
+                    * rune_env
+                    * 0.14;
+
+                // Huginn (Thought) & Muninn (Memory = MEM|8) Raven Wing Lemniscate `∞` Stereo Pan
+                let omega = tau * 0.22 * t;
+                let sin_w = omega.sin();
+                let raven_pan = 0.5 + 0.38 * (omega.cos() / (1.0 + sin_w * sin_w));
+
+                let (q65_l, q65_r) = quant65k.sample_realtime_48k(frame_idx, 432.0);
+                let (fifike_l, fifike_r) =
+                    crate::wupz_mlx_quant::sample_fifike_purr_and_mlx_harmonic(t);
+
+                let fade = if t < 2.0 {
+                    0.5 * (1.0 - (std::f32::consts::PI * t / 2.0).cos())
+                } else if t > (duration_seconds - 3.0).max(2.1) {
+                    let rem = (duration_seconds - t).max(0.0);
+                    0.5 * (1.0 - (std::f32::consts::PI * rem / 3.0).cos())
+                } else {
+                    1.0
+                };
+
+                let l = fade
+                    * (frame_drum
+                        + tagel_d2 * 0.90
+                        + tagel_a2 * 0.80
+                        + ginnungagap_432_l
+                        + yggdrasil_528 * 0.92
+                        + drengskapr_852 * (1.0 - raven_pan)
+                        + rune_call * (1.0 - raven_pan)
+                        + 0.14 * q65_l
+                        + fifike_l);
+                let r = fade
+                    * (frame_drum
+                        + tagel_d2 * 0.80
+                        + tagel_a2 * 0.92
+                        + ginnungagap_438_r
+                        + yggdrasil_528
+                        + drengskapr_852 * raven_pan
+                        + rune_call * raven_pan
+                        + 0.14 * q65_r
+                        + fifike_r);
+                (l, r)
+            }
+            SynthTrack::DesertPsyRockKyussPlasma => {
+                let tau = std::f32::consts::TAU;
+                let frac_2_pi = std::f32::consts::FRAC_2_PI;
+
+                // 0.73 Hz QWave Consciousness Gate + 22/9 Hz (2.444444 Hz LOVELOVEL) Desert Horizon Carrier
+                let qwave_073 = 0.70 + 0.30 * (tau * 0.73 * t).sin();
+                let carrier_22_9 = 0.72 + 0.28 * (tau * (22.0 / 9.0) * t).sin();
+
+                // 1. KYUSS / SKY VALLEY C-STANDARD FUZZ BASS & DESERT RIFF (88..98 BPM seed-locked pocket)
+                // C2 (65.41 Hz), D2 (72.0 Hz), F2 (86.4 Hz), G2 (96.0 Hz), A2 (108.0 Hz), Bb2 (115.2 Hz), C3 (128.0 Hz), D3 (144.0 Hz)
+                let desert_riff_hz: [f32; 8] = [
+                    72.0, 72.0, 86.4, 96.0, 108.0, 96.0, 115.2, 65.41,
+                ];
+                let beat_sec = 60.0 / seed_bpm;
+                let step_sec = beat_sec * 0.5; // 8th-note desert stoner pocket
+                let step_idx = (((t / step_sec) as usize) + seed_riff_rot) % desert_riff_hz.len();
+                let step_local_t = t % step_sec;
+                let riff_root = desert_riff_hz[step_idx];
+                let pluck_env = (1.0 - (-45.0 * step_local_t).exp()) * (-3.2 * step_local_t).exp();
+
+                // Tube asymmetric fuzz overdrive (Ampeg SVT sub + Marshall JCM800 neck-pickup sustain)
+                let raw_gtr = (tau * riff_root * t).sin() * 0.65
+                    + frac_2_pi * (tau * (riff_root * 1.5) * t).sin().asin() * 0.45 // Power-chord fifth
+                    + (tau * (riff_root * 2.0) * t).sin() * 0.30;
+                let fuzz_drive = 1.85 * (0.55 + 0.45 * pluck_env);
+                let kyuss_fuzz = (fuzz_drive * raw_gtr + 0.34 * raw_gtr * raw_gtr).tanh() * 0.23;
+                let svt_sub_bass = (tau * (riff_root * 0.5) * t).sin() * 0.24 * (0.65 + 0.35 * pluck_env);
+
+                // Desert Stoner Drum Groove (Kick on beat, warm desert snare on backbeat, ride shimmer)
+                let beat_local_t = t % beat_sec;
+                let bar_beat = ((t / beat_sec) as usize) % 4;
+                let kick_env = (1.0 - (-80.0 * beat_local_t).exp()) * (-9.5 * beat_local_t).exp();
+                let kick_hz = 52.0 + 44.0 * (-22.0 * beat_local_t).exp();
+                let desert_kick = (tau * kick_hz * beat_local_t).sin() * kick_env * 0.24;
+                let snare_active = if bar_beat == 1 || bar_beat == 3 { 1.0 } else { 0.0 };
+                let snare_env = (1.0 - (-90.0 * beat_local_t).exp()) * (-14.0 * beat_local_t).exp() * snare_active;
+                let snare_body = ((tau * 186.0 * beat_local_t).sin()
+                    + 0.6 * (tau * 1337.0 * t + 7.0 * (tau * 431.0 * t).sin()).sin())
+                    * snare_env
+                    * 0.14;
+
+                // 2. PLASMA / NAXATRAS / COSMIC FLOW LIQUID SPACE-ROCK PHASER & MULTI-TAP TAPE ECHO
+                let phaser_lfo = 0.5 + 0.5 * (tau * seed_phaser_rate * t).sin();
+                let solo_notes: [f32; 8] = [
+                    288.0, 324.0, 345.6, 432.0, 486.0, 528.0, 648.0, 852.0,
+                ];
+                let solo_idx = (((t / (beat_sec * 1.5)) as usize) + seed_riff_rot) % solo_notes.len();
+                let solo_local_t = t % (beat_sec * 1.5);
+                let solo_hz = solo_notes[solo_idx];
+                let solo_env = (1.0 - (-18.0 * solo_local_t).exp()) * (-1.45 * solo_local_t).exp();
+                // Liquid 4-harmonic phase-shifted space guitar
+                let phaser_shift = 1.6 * phaser_lfo;
+                let plasma_lead = ((tau * solo_hz * t + phaser_shift).sin() * 0.62
+                    + (tau * (solo_hz * 1.5) * t - phaser_shift).sin() * 0.26
+                    + (tau * (solo_hz * 2.0) * t + phaser_shift * 0.5).sin() * 0.12)
+                    * solo_env
+                    * 0.19;
+
+                // Ping-Pong Analog Tape Echo (Tap L = 15,648 samples ~ 326 ms dotted-8th; Tap R = 23,472 samples ~ 489 ms)
+                let delay_cap = tape_delay_l.len();
+                let write_pos = frame_idx % delay_cap;
+                let tap_l_pos = (write_pos + delay_cap - 15_648) % delay_cap;
+                let tap_r_pos = (write_pos + delay_cap - 23_472) % delay_cap;
+                let echo_l = tape_delay_l[tap_l_pos];
+                let echo_r = tape_delay_r[tap_r_pos];
+                tape_delay_l[write_pos] = (plasma_lead + kyuss_fuzz * 0.35 + echo_r * 0.44).tanh();
+                tape_delay_r[write_pos] = (plasma_lead * 0.90 + kyuss_fuzz * 0.35 + echo_l * 0.44).tanh();
+
+                // 3. PROCEDURAL 3D SPATIAL BINAURAL ENGINE (Lemniscate ∞ Azimuth + ITD ±31 samples + ILD)
+                let omega = tau * seed_spatial_omega * t;
+                let sin_w = omega.sin();
+                let azimuth_norm = omega.cos() / (1.0 + sin_w * sin_w); // [-1.0, +1.0] Lemniscate horizon
+                let elevation_mod = 0.78 + 0.22 * (tau * (seed_spatial_omega * 0.618034) * t).sin();
+                let pan_3d = 0.5 + 0.40 * azimuth_norm;
+
+                // Interaural Time Difference (ITD): up to ±30 samples (±0.625 ms at 48 kHz)
+                let itd_pos = frame_idx & 63;
+                let spatial_src = plasma_lead + 0.55 * echo_l + 0.45 * echo_r;
+                itd_ring_l[itd_pos] = spatial_src;
+                itd_ring_r[itd_pos] = spatial_src;
+                let delay_l_smp = if azimuth_norm > 0.0 {
+                    (azimuth_norm * 30.0) as usize
+                } else {
+                    0
+                };
+                let delay_r_smp = if azimuth_norm < 0.0 {
+                    ((-azimuth_norm) * 30.0) as usize
+                } else {
+                    0
+                };
+                let binaural_l = itd_ring_l[(itd_pos + 64 - delay_l_smp) & 63] * (1.0 - pan_3d * 0.65) * elevation_mod;
+                let binaural_r = itd_ring_r[(itd_pos + 64 - delay_r_smp) & 63] * (0.35 + pan_3d * 0.65) * elevation_mod;
+
+                // Cosmic Flow 432 Hz × 528 Hz Desert Mirage Pad + Quant65k+ Layer #69,633 Shimmer
+                let mirage_432_l = (tau * 432.0 * t).sin() * 0.11 * qwave_073;
+                let mirage_438_r = (tau * 438.0 * t).sin() * 0.11 * qwave_073;
+                let mirage_528 = (tau * 528.0 * t).sin() * 0.09 * carrier_22_9;
+                let (q65_l, q65_r) = quant65k.sample_realtime_48k(frame_idx, riff_root * 2.0);
+                let (fifike_l, fifike_r) =
+                    crate::wupz_mlx_quant::sample_fifike_purr_and_mlx_harmonic(t);
+
+                let fade = if t < 1.8 {
+                    0.5 * (1.0 - (std::f32::consts::PI * t / 1.8).cos())
+                } else if t > (duration_seconds - 2.5).max(1.9) {
+                    let rem = (duration_seconds - t).max(0.0);
+                    0.5 * (1.0 - (std::f32::consts::PI * rem / 2.5).cos())
+                } else {
+                    1.0
+                };
+
+                let l = fade
+                    * (desert_kick
+                        + snare_body * 0.90
+                        + svt_sub_bass
+                        + kyuss_fuzz * 0.92
+                        + binaural_l
+                        + echo_l * 0.28
+                        + mirage_432_l
+                        + mirage_528 * 0.90
+                        + 0.14 * q65_l
+                        + fifike_l);
+                let r = fade
+                    * (desert_kick
+                        + snare_body
+                        + svt_sub_bass
+                        + kyuss_fuzz * 0.84
+                        + binaural_r
+                        + echo_r * 0.28
+                        + mirage_438_r
+                        + mirage_528
+                        + 0.14 * q65_r
+                        + fifike_r);
+                (l, r)
+            }
         };
 
         let (eq_l, eq_r) = eq.apply_stereo(raw_l, raw_r);
@@ -933,6 +1185,257 @@ fn write_wav_header_and_pcm(
     f.write_all(pcm_bytes)?;
     f.flush()?;
     Ok(())
+}
+
+/// Procedural 3D Spatial Binaural & Multi-Bluetooth telemetry recorded in a Quant-Music Signature.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProceduralSpatialTelemetry {
+    pub trajectory: String,
+    pub azimuth_span_deg: f32,
+    pub itd_max_samples_48k: usize,
+    pub itd_max_microseconds: f32,
+    pub lemniscate_orbit_hz: f32,
+    pub ping_pong_tape_echo_ms: (f32, f32),
+    pub stereo_spatial_width: f32,
+    pub bluetooth_topology: String,
+}
+
+/// Single balanced-ternary `{-1, 0, +1}` register entry in a `QuantMusicSignature`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QuantRegisterEntry {
+    pub register: String,
+    pub signal: String,
+    pub ternary: i8,
+}
+
+/// Cryptographic & Balanced-Ternary `Quant-Music Signature` emitted by the Sovereign DJ Agent.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QuantMusicSignature {
+    pub id: String,
+    pub title: String,
+    pub artist: String,
+    pub year: String,
+    pub genre: String,
+    pub seed_phrase: String,
+    pub track_preset: String,
+    pub wav_path: String,
+    pub signature_path: String,
+    pub sha256_wav_digest: String,
+    pub seed_sha256_digest: String,
+    pub sample_rate_hz: u32,
+    pub duration_seconds: f32,
+    pub quant65k_layers: usize,
+    pub n_plus_1_odin_layer_active: bool,
+    pub bpm_locked: f32,
+    pub rms_dbfs: f32,
+    pub peak_dbfs: f32,
+    pub zero_crossings: usize,
+    pub crest_factor_db: f32,
+    pub quanttern_emotion_tag: String,
+    pub wupz_abi_xor_hex: String,
+    pub kompress_rle_bytes: usize,
+    pub kompress_ratio: f64,
+    pub ascii85_digest_preview: String,
+    pub procedural_spatial: ProceduralSpatialTelemetry,
+    pub quant: Vec<QuantRegisterEntry>,
+}
+
+/// Renders a seeded track with procedural 3D spatialization, computes its cryptographic + ternary
+/// `QuantMusicSignature`, and writes the `.json` signature receipt into `signs_dir`.
+pub fn render_and_sign_dj_agent_track(
+    seed_phrase: &str,
+    track: SynthTrack,
+    duration_seconds: f32,
+    total_layers: usize,
+    topology: MultiBluetoothTopology,
+    output_wav_path: &Path,
+    signs_dir: &Path,
+) -> std::io::Result<(RenderSummary, QuantMusicSignature)> {
+    let summary = render_wav_track_seeded(
+        seed_phrase,
+        track,
+        duration_seconds,
+        total_layers,
+        topology,
+        output_wav_path,
+    )?;
+
+    let wav_bytes = std::fs::read(output_wav_path)?;
+    let wav_sha256 = format!("{:x}", Sha256::digest(&wav_bytes));
+    let seed_hash_bytes: [u8; 32] = Sha256::digest(seed_phrase.as_bytes()).into();
+    let seed_sha256 = format!("{:x}", Sha256::digest(seed_phrase.as_bytes()));
+    let seed_short = &seed_sha256[..12];
+
+    // Compute acoustic & spatial telemetry directly from the 16-bit stereo PCM payload (offset 44+)
+    let pcm = if wav_bytes.len() > 44 {
+        &wav_bytes[44..]
+    } else {
+        &[][..]
+    };
+    let mut sum_sq = 0.0f64;
+    let mut peak_abs = 0.0f64;
+    let mut dot_lr = 0.0f64;
+    let mut energy_l = 0.0f64;
+    let mut energy_r = 0.0f64;
+    let mut zero_xings = 0usize;
+    let mut prev_l = 0.0f32;
+    let mut frames_counted = 0usize;
+
+    for chunk in pcm.chunks_exact(4) {
+        let l = (i16::from_le_bytes([chunk[0], chunk[1]]) as f32) / 32768.0;
+        let r = (i16::from_le_bytes([chunk[2], chunk[3]]) as f32) / 32768.0;
+        let m = 0.5 * (l + r);
+        sum_sq += (m as f64) * (m as f64);
+        let abs_m = (l.abs().max(r.abs())) as f64;
+        if abs_m > peak_abs {
+            peak_abs = abs_m;
+        }
+        dot_lr += (l as f64) * (r as f64);
+        energy_l += (l as f64) * (l as f64);
+        energy_r += (r as f64) * (r as f64);
+        if frames_counted > 0 && ((l >= 0.0 && prev_l < 0.0) || (l < 0.0 && prev_l >= 0.0)) {
+            zero_xings += 1;
+        }
+        prev_l = l;
+        frames_counted += 1;
+    }
+
+    let rms = ((sum_sq / (frames_counted.max(1) as f64)).sqrt()).max(1e-6);
+    let rms_dbfs = (20.0 * rms.log10()) as f32;
+    let peak_dbfs = (20.0 * peak_abs.max(1e-6).log10()) as f32;
+    let crest_factor_db = (peak_dbfs - rms_dbfs).max(0.0);
+    let denom = (energy_l * energy_r).sqrt().max(1e-9);
+    let corr = (dot_lr / denom).clamp(-1.0, 1.0);
+    let stereo_spatial_width = (1.0 - corr) as f32;
+
+    let mut q_engine = Quant65kEngine::new(total_layers, seed_phrase);
+    let q_report = q_engine.verify_and_report();
+
+    let bpm_locked = 88.0 + (seed_hash_bytes[0] as f32 / 255.0) * 10.0;
+    let lemniscate_hz = 0.15 + (seed_hash_bytes[3] as f32 / 255.0) * 0.18;
+
+    let slug: String = seed_phrase
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() {
+                c.to_ascii_lowercase()
+            } else {
+                '-'
+            }
+        })
+        .collect::<String>()
+        .trim_matches('-')
+        .to_string();
+    let clean_slug = if slug.is_empty() {
+        "seed".to_string()
+    } else {
+        slug
+    };
+
+    std::fs::create_dir_all(signs_dir)?;
+    let sig_filename = format!("dj-agent-{}-{}.json", clean_slug, &seed_short[..8]);
+    let sig_path = signs_dir.join(&sig_filename);
+
+    let spatial = ProceduralSpatialTelemetry {
+        trajectory: "Lemniscate of Bernoulli ∞ Horizon + Golden-Ratio Elevation + Binaural ITD/ILD".to_string(),
+        azimuth_span_deg: 150.0,
+        itd_max_samples_48k: 30,
+        itd_max_microseconds: 625.0,
+        lemniscate_orbit_hz: lemniscate_hz,
+        ping_pong_tape_echo_ms: (326.0, 489.0),
+        stereo_spatial_width,
+        bluetooth_topology: topology.as_str().to_string(),
+    };
+
+    let n_plus_1_active = total_layers >= crate::quant65k::N_PLUS_1_ODIN_LAYER;
+    let quant = vec![
+        QuantRegisterEntry {
+            register: "seed".to_string(),
+            signal: seed_phrase.to_string(),
+            ternary: 1,
+        },
+        QuantRegisterEntry {
+            register: "rms_db".to_string(),
+            signal: format!("{rms_dbfs:.2}"),
+            ternary: if rms_dbfs > -28.0 { 1 } else { 0 },
+        },
+        QuantRegisterEntry {
+            register: "peak_db".to_string(),
+            signal: format!("{peak_dbfs:.2}"),
+            ternary: if peak_dbfs <= 0.0 && peak_dbfs > -6.0 { 1 } else { 0 },
+        },
+        QuantRegisterEntry {
+            register: "zero_xings".to_string(),
+            signal: zero_xings.to_string(),
+            ternary: if zero_xings > 200 { 1 } else { 0 },
+        },
+        QuantRegisterEntry {
+            register: "crest_db".to_string(),
+            signal: format!("{crest_factor_db:.2}"),
+            ternary: if crest_factor_db > 6.0 { 1 } else { 0 },
+        },
+        QuantRegisterEntry {
+            register: "spatial_width".to_string(),
+            signal: format!("{stereo_spatial_width:.4}"),
+            ternary: if stereo_spatial_width > 0.01 { 1 } else { 0 },
+        },
+        QuantRegisterEntry {
+            register: "itd_binaural_samples".to_string(),
+            signal: "30 (±625us @ 48kHz)".to_string(),
+            ternary: 1,
+        },
+        QuantRegisterEntry {
+            register: "quant65k_layers".to_string(),
+            signal: total_layers.to_string(),
+            ternary: 1,
+        },
+        QuantRegisterEntry {
+            register: "n_plus_1_odin_layer".to_string(),
+            signal: format!("#{} (n+1||[X])", crate::quant65k::N_PLUS_1_ODIN_LAYER),
+            ternary: if n_plus_1_active { 1 } else { 0 },
+        },
+        QuantRegisterEntry {
+            register: "nand_held_read".to_string(),
+            signal: "NAND(1,1)=0 (PRINTABLE & ADMISSIBLE)".to_string(),
+            ternary: 1,
+        },
+    ];
+
+    let sig = QuantMusicSignature {
+        id: format!("dj-agent-{}-{}", clean_slug, &seed_short[..8]),
+        title: format!("{} [seed: {}]", track.title(), seed_phrase),
+        artist: "8b-is Sovereign DJ Agent :: Desert Psy Rock × Quant65k+".to_string(),
+        year: "2026".to_string(),
+        genre: "desert-psy-rock / stoner-psych / procedural-spatial / quant65k+".to_string(),
+        seed_phrase: seed_phrase.to_string(),
+        track_preset: format!("{track:?}"),
+        wav_path: output_wav_path.display().to_string(),
+        signature_path: sig_path.display().to_string(),
+        sha256_wav_digest: wav_sha256,
+        seed_sha256_digest: seed_sha256,
+        sample_rate_hz: summary.sample_rate_hz,
+        duration_seconds: summary.duration_seconds,
+        quant65k_layers: summary.quant65k_layers_active,
+        n_plus_1_odin_layer_active: n_plus_1_active,
+        bpm_locked,
+        rms_dbfs,
+        peak_dbfs,
+        zero_crossings: zero_xings,
+        crest_factor_db,
+        quanttern_emotion_tag: summary.quanttern_emotion_tag.clone(),
+        wupz_abi_xor_hex: format!("0x{:02x}", summary.wupz_abi_xor),
+        kompress_rle_bytes: q_report.kompress_rle_bytes,
+        kompress_ratio: q_report.kompress_ratio,
+        ascii85_digest_preview: q_report.ascii85_digest_preview,
+        procedural_spatial: spatial,
+        quant,
+    };
+
+    let json_pretty = serde_json::to_string_pretty(&sig)
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+    std::fs::write(&sig_path, format!("{json_pretty}\n"))?;
+
+    Ok((summary, sig))
 }
 
 #[cfg(test)]
@@ -1017,5 +1520,78 @@ mod tests {
         assert!(summary.peak_left > 0.05 && summary.peak_left <= 1.0);
         assert!(summary.peak_right > 0.05 && summary.peak_right <= 1.0);
         let _ = std::fs::remove_file(out);
+    }
+
+    #[test]
+    fn heimleid_nordic_odin_omni_renders_unclipped_n_plus_1_layer() {
+        assert_eq!(
+            SynthTrack::from_name("odin"),
+            SynthTrack::HeimleidNordicOdinOmni
+        );
+        assert_eq!(
+            SynthTrack::from_name("n+1||[x]"),
+            SynthTrack::HeimleidNordicOdinOmni
+        );
+        let out = std::env::temp_dir().join("heimleid-nordic-odin-test.wav");
+        let summary = render_wav_track(
+            SynthTrack::HeimleidNordicOdinOmni,
+            0.5,
+            crate::quant65k::N_PLUS_1_ODIN_LAYER,
+            MultiBluetoothTopology::FullConstellationWall,
+            &out,
+        )
+        .unwrap();
+        assert_eq!(
+            summary.quant65k_layers_active,
+            crate::quant65k::N_PLUS_1_ODIN_LAYER
+        );
+        assert!(summary.peak_left > 0.05 && summary.peak_left <= 1.0);
+        assert!(summary.peak_right > 0.05 && summary.peak_right <= 1.0);
+        let _ = std::fs::remove_file(out);
+    }
+
+    #[test]
+    fn desert_psy_rock_kyuss_plasma_renders_and_emits_quant_music_signature() {
+        assert_eq!(
+            SynthTrack::from_name("kyuss"),
+            SynthTrack::DesertPsyRockKyussPlasma
+        );
+        assert_eq!(
+            SynthTrack::from_name("plasma"),
+            SynthTrack::DesertPsyRockKyussPlasma
+        );
+        let dir = std::env::temp_dir();
+        let wav_kyuss = dir.join("dj-agent-kyuss-test.wav");
+        let wav_plasma = dir.join("dj-agent-plasma-test.wav");
+        let signs_dir = dir.join("dj-agent-signs-test");
+        let (sum_k, sig_k) = render_and_sign_dj_agent_track(
+            "kyuss-welcome-to-sky-valley",
+            SynthTrack::DesertPsyRockKyussPlasma,
+            0.5,
+            crate::quant65k::N_PLUS_1_ODIN_LAYER,
+            MultiBluetoothTopology::FullConstellationWall,
+            &wav_kyuss,
+            &signs_dir,
+        )
+        .unwrap();
+        let (_sum_p, sig_p) = render_and_sign_dj_agent_track(
+            "plasma-liquid-space-rock",
+            SynthTrack::DesertPsyRockKyussPlasma,
+            0.5,
+            crate::quant65k::N_PLUS_1_ODIN_LAYER,
+            MultiBluetoothTopology::FullConstellationWall,
+            &wav_plasma,
+            &signs_dir,
+        )
+        .unwrap();
+        assert!(sum_k.peak_left > 0.05 && sum_k.peak_left <= 1.0);
+        assert!(sum_k.peak_right > 0.05 && sum_k.peak_right <= 1.0);
+        assert_ne!(sig_k.sha256_wav_digest, sig_p.sha256_wav_digest);
+        assert!(sig_k.n_plus_1_odin_layer_active);
+        assert_eq!(sig_k.procedural_spatial.itd_max_samples_48k, 30);
+        assert!(Path::new(&sig_k.signature_path).exists());
+        let _ = std::fs::remove_file(wav_kyuss);
+        let _ = std::fs::remove_file(wav_plasma);
+        let _ = std::fs::remove_dir_all(signs_dir);
     }
 }

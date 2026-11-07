@@ -87,6 +87,7 @@ dependencies = [
  "spherepop",
  "ternary-lane",
  "ultrawild",
+ "world-core",
  "wupz-core",
 ]
 
@@ -210,7 +211,7 @@ dependencies = [
 
 [[package]]
 name = "qwave-core"
-version = "0.1.0"
+version = "0.4.1"
 
 [[package]]
 name = "r-efi"

@@ -24,6 +24,7 @@ spherepop = { path = "../8b-is-engine/crates/spherepop" }
 ultrawild = { path = "../8b-is-engine/crates/ultrawild" }
 qdecorators = { path = "../8b-is-engine/crates/qdecorators", default-features = false }
 ternary-lane = { path = "../8b-is-engine/crates/ternary" }
+world-core = { path = "../8b-is-engine/crates/world-core" }
 entheai-quantum = { path = "../entheai/crates/quantum" }
 entheai-radio = { path = "../entheai/crates/radio", default-features = false }
 

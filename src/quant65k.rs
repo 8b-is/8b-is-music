@@ -33,6 +33,9 @@ pub const DEFAULT_OVERFLOW_LAYERS: usize = 4_096;
 /// Default total `Quant65k+` layers (`65,536 + 4,096 = 69,632`).
 pub const DEFAULT_QUANT65K_PLUS_LAYERS: usize = BASE_QUANT65K_LAYERS + DEFAULT_OVERFLOW_LAYERS;
 
+/// The `n+1 || [X]` Odin Allfather Witness Layer (`69,632 + 1 = 69,633` || Ultralove Edition `011 [X]+1`).
+pub const N_PLUS_1_ODIN_LAYER: usize = DEFAULT_QUANT65K_PLUS_LAYERS + 1;
+
 /// `Q16` fixed-point reciprocal (`1.0 / 65536.0`), matching `liquid-rust` LPC & frequency warping scale.
 pub const Q16_RECIP: f32 = 1.0 / 65_536.0;
 

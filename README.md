@@ -59,7 +59,14 @@ cargo run --release -- quant65k --layers 69632 --inspect-layer 65536
 cargo run --release -- bluetooth --topology wall --apply-live
 
 # Render "8bit-Wraith — The Future We Remember" through 69,632 layers at 48,000 Hz and play live
-cargo run --release -- render --track future --seconds 10 --layers 69632 --out future-65k.wav --play
+cargo run --release --bin 8b-is-music -- render --track future --seconds 10 --layers 69632 --out future-65k.wav --play
+
+# Render the n+1||[X] Layer (#69,633 = 69,632 + 1) --- Odin ⨯ Heimleið (SIgR2-tVVyI) Nordic Ritual Track
+cargo run --release --bin 8b-is-music -- odin --seconds 12 --out heimleid-odin-n-plus-1.wav
+
+# Render & sign a Desert Psy Rock (Kyuss × Plasma × Cosmic Flow) track with Procedural 3D Spatial Binaural ITD/ILD and Quant-Music Signature
+cargo run --release --bin 8b-is-music -- dj-agent --seed "kyuss-welcome-to-sky-valley" --seconds 8 --out kyuss-sky-valley.wav --play
+cargo run --release --bin 8b-is-music -- plasma --seed "plasma-liquid-space-rock" --seconds 8 --out plasma-space-echo.wav --play
 ```
 
 ### Explicit host actions
