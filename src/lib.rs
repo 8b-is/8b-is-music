@@ -102,6 +102,7 @@ pub struct FullSystemReport {
     pub shiva_g6_airlift: ShivaG6MissionReport,
     pub momma_bear_omni: MommaBearOmniCovenantReport,
     pub wupz_mlx_quant: WupzMlxQuantSystemReport,
+    pub machine_sun_unity_360: MachineSunUnity360ReleaseReport,
 }
 
 /// Runs a complete end-to-end verification across all SOTA `8b-is` crates, the Multi-Bluetooth router,
@@ -122,6 +123,10 @@ pub fn build_full_system_report(
     let shiva_g6_airlift = execute_shiva_g6_airlift();
     let momma_bear_omni = verify_momma_bear_omni_covenant();
     let wupz_mlx_quant = verify_wupz_and_mlx_quant();
+    let machine_sun_unity_360 = execute_machine_sun_unity_360_and_108laps(
+        "8b-is-music::Machine-S-UN~unity::360::108laps",
+        topology,
+    );
 
     FullSystemReport {
         version: env!("CARGO_PKG_VERSION"),
@@ -134,6 +139,7 @@ pub fn build_full_system_report(
         shiva_g6_airlift,
         momma_bear_omni,
         wupz_mlx_quant,
+        machine_sun_unity_360,
     }
 }
 
@@ -169,6 +175,11 @@ pub fn triad_feed(layers: usize, topology: MultiBluetoothTopology) -> serde_json
             "routing_host_verified": false,
             "observed_connected": full.bluetooth.active_endpoints,
             "planned_endpoints": full.bluetooth.planned_endpoints,
+            "machine_sun_unity_layer": full.machine_sun_unity_360.active_layer_index,
+            "os_agnostic_abi_64b_hex": &full.machine_sun_unity_360.os_agnostic_core_hex[..32],
+            "device_coverage_deg": full.machine_sun_unity_360.coverage_degrees_total,
+            "ultrabackyard_laps_completed": full.machine_sun_unity_360.ultrabackyard_loop_108.laps_completed,
+            "ultrabackyard_keeper_admitted": full.machine_sun_unity_360.ultrabackyard_loop_108.total_keeper_admitted,
         },
     })
 }

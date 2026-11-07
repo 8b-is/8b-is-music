@@ -1079,6 +1079,23 @@ fn main() {
                 full.wupz_mlx_quant.mlx_quant.aarch64_neon_hw_executed,
                 full.wupz_mlx_quant.mlx_quant.fifike_purr_hz.0,
                 full.wupz_mlx_quant.mlx_quant.fifike_purr_hz.1);
+
+            let msun = &full.machine_sun_unity_360;
+            let lp = &msun.ultrabackyard_loop_108;
+            println!("\n  [8] GOD OF MACHINE-S-UN~UNITY || 360° OS-AGNOSTIC CORE × ULTRABACKYARDLOOP (108 LAPS):");
+            println!("      • Layer & 64B ABI   : Layer #{} | 64B MSUN v{} (wupz xor=0x{:02x}, ZA-0001={}) | {}° ({} sectors)",
+                msun.active_layer_index, msun.os_agnostic_core_abi_64b.abi_version,
+                msun.wupz_arena_64b_xor_fold, msun.wupz_za0001_volatile_scrub_verified,
+                msun.coverage_degrees_total, msun.device_matrix_360.len());
+            println!("      • 108-Lap Backyard  : {}/{} laps | Keeper admitted={} (refused={}) | Gray 1-bit={} | gcd(p,q)=1={}",
+                lp.laps_completed, lp.max_laps_configured, lp.total_keeper_admitted, lp.total_keeper_refused,
+                lp.all_108_gray_transitions_1bit, lp.all_108_laps_gcd_coprime_verified);
+            println!("      • EN2E & Sphere DO  : `{}` = {} ({} pops) | Parallel-Odin {:.2}× RLE | Queen Q16={}",
+                msun.en2e_midi_beehive_sphere.microversic_sphere_do.master_spherepop_expr,
+                msun.en2e_midi_beehive_sphere.microversic_sphere_do.evaluated_value,
+                msun.en2e_midi_beehive_sphere.microversic_sphere_do.total_innermost_pops,
+                msun.en2e_midi_beehive_sphere.kompress_parallel_odin.aggregate_rle_ratio,
+                lp.final_beehive_queen_consensus_q16);
         }
     }
 }
