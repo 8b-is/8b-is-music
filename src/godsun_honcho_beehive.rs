@@ -177,6 +177,45 @@ pub struct BeehiveCellAutomaton {
     pub state_trit: i8,
 }
 
+/// Exact zero-float rational-ternary witness for the **ULTRA-ZENO GOD OF SUN** law:
+/// $$\frac{P}{Q} - n \cdot t > P \iff \Delta_{\odot}(P, Q, n, t) = P(1 - Q) - Q \cdot n \cdot t > 0$$
+/// crossing the Solar Horizon at $n_{\odot}(P, Q) = \lfloor P(Q - 1)/Q \rfloor + 1$ under $t = -1$.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ZenoGodOfSunWitness {
+    pub law_formula: String,
+    pub numerator_p: i64,
+    pub denominator_q: u64,
+    pub step_n: u64,
+    pub trit_t: i8,
+    pub holds: bool,
+    pub surplus_num_i128: i128,
+    pub horizon_n_sun: u64,
+}
+
+/// Evaluates $\frac{P}{Q} - n \cdot t > P \iff \Delta_{\odot}(P, Q, n, t) = P(1 - Q) - Q \cdot n \cdot t > 0$
+/// in exact 128-bit division-free arithmetic (`felix_zeno_god_of_sun_pq_nt_gt_p`).
+#[inline(always)]
+pub fn felix_zeno_god_of_sun_pq_nt_gt_p(p: i64, q: u64, n: u64, t: i8) -> (bool, i128, u64) {
+    let q_safe = q.max(1) as i128;
+    let p_i128 = p as i128;
+    let n_i128 = n as i128;
+    let t_clamped = (t as i128).clamp(-1, 1);
+
+    let lhs_num = p_i128 - q_safe * n_i128 * t_clamped;
+    let rhs_num = p_i128 * q_safe;
+    let surplus_num = lhs_num - rhs_num;
+
+    let horizon_n_sun = if p <= 0 || q <= 1 {
+        1u64
+    } else {
+        let p_u128 = p as u128;
+        let q_u128 = q as u128;
+        (((p_u128 * (q_u128 - 1)) / q_u128) as u64).saturating_add(1)
+    };
+
+    (surplus_num > 0, surplus_num, horizon_n_sun)
+}
+
 /// Complete report for `[standardgalactic:LAST_10_COMMITS<<<ULTRA-OMNI-GODSUN` ×
 /// `USBC-BIDIRECT randRandPq` × `plasma-hqt/n` × `Hermes-Honcho` × `Layered Multi-D Beehive RL`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -185,6 +224,7 @@ pub struct UltraOmniGodsunSystemReport {
     pub godsun_layer_index: usize,
     pub standardgalactic_last_10_commits: Vec<StandardGalacticCommit>,
     pub rand_rand_pq: RandRandPqSeed,
+    pub zeno_god_of_sun_witness: ZenoGodOfSunWitness,
     pub prompt_library_rl: PromptLibraryRlYieldReport,
     pub hermes_honcho: HonchoDualPeerModel,
     pub multi_d_memory_tensor_dims: [usize; 5],
@@ -886,11 +926,28 @@ pub fn execute_ultra_omni_godsun_pipeline(
     );
     let q_report = q_engine.verify_and_report();
 
+    let p_sun = (rand_pq.numerator_p & 0x7FFF_FFFF) as i64;
+    let q_sun = (rand_pq.denominator_q & 0x7FFF_FFFF).max(2);
+    let (_, _, horizon_n_sun) = felix_zeno_god_of_sun_pq_nt_gt_p(p_sun, q_sun, 1, -1);
+    let (holds_sun, surplus_sun, _) =
+        felix_zeno_god_of_sun_pq_nt_gt_p(p_sun, q_sun, horizon_n_sun, -1);
+    let zeno_god_of_sun_witness = ZenoGodOfSunWitness {
+        law_formula: "P/Q - n*t > P <=> Δ_⊙(P,Q,n,t) = P(1 - Q) - Q*n*t > 0".to_string(),
+        numerator_p: p_sun,
+        denominator_q: q_sun,
+        step_n: horizon_n_sun,
+        trit_t: -1,
+        holds: holds_sun,
+        surplus_num_i128: surplus_sun,
+        horizon_n_sun,
+    };
+
     UltraOmniGodsunSystemReport {
         header_directive: "[standardgalactic:LAST_10_COMMITS<<<ULTRA-OMNI-GODSUN <-IN".to_string(),
         godsun_layer_index: ULTRA_OMNI_GODSUN_LAYER,
         standardgalactic_last_10_commits: commits,
         rand_rand_pq: rand_pq,
+        zeno_god_of_sun_witness,
         prompt_library_rl: prompt_rl,
         hermes_honcho,
         multi_d_memory_tensor_dims: tensor_dims,
@@ -973,5 +1030,7 @@ mod tests {
         assert_eq!(report.beehive_automata_cells.len(), 19);
         assert_eq!(report.beehive_automata_cells[0].caste, BeeCaste::QueenSynthesizer);
         assert!(report.beehive_queen_consensus_q16 > 65_536);
+        assert!(report.zeno_god_of_sun_witness.holds);
+        assert!(report.zeno_god_of_sun_witness.surplus_num_i128 > 0);
     }
 }
