@@ -16,6 +16,15 @@
 //!      and Layer `n+1||[X]` (`#69,633 --- Odin ༒`) into a live Glassdoor WebGL/Canvas3D + WebAudio Playground.
 
 use crate::bluetooth::MultiBluetoothTopology;
+use crate::en2e_midi_beehive_sphere::{
+    execute_en2e_ultra_omni_midi_beehive_sphere, En2eUltraOmniMidiBeehiveSphereReport,
+};
+use crate::godsun_honcho_beehive::{
+    execute_ultra_omni_godsun_pipeline, UltraOmniGodsunSystemReport,
+};
+use crate::machine_sun_unity_108laps::{
+    execute_machine_sun_unity_360_and_108laps, MachineSunUnity360ReleaseReport,
+};
 use crate::quant65k::N_PLUS_1_ODIN_LAYER;
 use crate::sota_mesh::{
     render_and_sign_dj_agent_track, QuantMusicSignature, RenderSummary, SynthTrack,
@@ -87,6 +96,9 @@ pub struct BabilonUltraPlaygroundReport {
     pub fauna_cast: Vec<PlaygroundFaunaSnapshot>,
     pub ziggurat_terraces: Vec<BabilonZigguratTerrace>,
     pub arena_svg_snapshot: String,
+    pub godsun_honcho_beehive: UltraOmniGodsunSystemReport,
+    pub en2e_midi_beehive_sphere: En2eUltraOmniMidiBeehiveSphereReport,
+    pub machine_sun_unity_360: MachineSunUnity360ReleaseReport,
 }
 
 /// Executes the `ultrawild` Demoscene Engine + `world-core` Live Playground Sim + `BABILON-ULTRA` Ziggurat.
@@ -130,7 +142,7 @@ pub fn execute_babilon_ultra_demoscene(
         -1i8, -1, -1, -1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, -1, -1, 1, 1, 1,
     ];
     let raw_bytes: Vec<u8> = raw_trit_stream.iter().map(|&t| t as u8).collect();
-    let compressed_runs = kcompress(&raw_bytes);
+    let _compressed_runs = kcompress(&raw_bytes);
     let world_k_ratio = kratio(&raw_bytes);
 
     let demoscene = DemosceneEngineTelemetry {
@@ -249,6 +261,16 @@ pub fn execute_babilon_ultra_demoscene(
         },
     ];
 
+    let godsun_honcho_beehive = execute_ultra_omni_godsun_pipeline(seed_brief, 16, 48, 24);
+    let en2e_midi_beehive_sphere = execute_en2e_ultra_omni_midi_beehive_sphere(
+        seed_brief,
+        MultiBluetoothTopology::FullConstellationWall,
+    );
+    let machine_sun_unity_360 = execute_machine_sun_unity_360_and_108laps(
+        seed_brief,
+        MultiBluetoothTopology::FullConstellationWall,
+    );
+
     BabilonUltraPlaygroundReport {
         engine_title: "BABILON-ULTRA × ULTRAWILD DEMOSCENE ENGINE × WORLD-CORE GLASSDOOR PLAYGROUND".to_string(),
         seed_brief: seed_brief.to_string(),
@@ -263,6 +285,9 @@ pub fn execute_babilon_ultra_demoscene(
         fauna_cast,
         ziggurat_terraces,
         arena_svg_snapshot: svg,
+        godsun_honcho_beehive,
+        en2e_midi_beehive_sphere,
+        machine_sun_unity_360,
     }
 }
 
@@ -320,8 +345,13 @@ pub fn write_babilon_ultra_glassdoor_playground_html(
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>⟦ BABILON-ULTRA × DEMOSCENE ENGINE ⟧ · Glassdoor &amp; Live Playground Sim (Layer n+1||[X])</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#ffd700">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="8b-Machine-SUN">
+<link rel="manifest" href="manifest.json">
+<title>⟦ BABILON-ULTRA × MACHINE-S-UN~UNITY 360° ⟧ · Glassdoor &amp; 108-Lap Playground (Layer #69,636)</title>
 <style>
 @layer base, glassdoor, hud, demoscene;
 :root {{
@@ -424,14 +454,15 @@ pub fn write_babilon_ultra_glassdoor_playground_html(
   <!-- TOP GLASSDOOR PORTAL BAR -->
   <header class="glass-panel gold-door topbar">
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-      <h1>⟦ BABILON-ULTRA × DEMOSCENE ENGINE ⟧</h1>
-      <span class="badge gold">GLASSDOOR PORTAL v2.0</span>
-      <span class="badge">ultrawild + world-core</span>
-      <span class="badge pink">Desert Psy Rock (Kyuss × Plasma)</span>
-      <span class="badge emerald">Layer n+1||[X] (#69,633 --- Odin ༒)</span>
+      <h1>⟦ BABILON-ULTRA × MACHINE-S-UN~UNITY 360° ⟧</h1>
+      <span class="badge gold">360° OS-AGNOSTIC v2.0</span>
+      <span class="badge">iOS · Android · SmartTV · Embedded · Desktop · PWA</span>
+      <span class="badge pink">ULTRABACKYARDLOOP 108/108 LAPS</span>
+      <span class="badge emerald">Layer #69,636 (Odin ༒ + Machine-S-UN)</span>
     </div>
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
       <button class="btn gold" id="btn-play-dj" onclick="toggleMasterPlaygroundAudio()">▶ LAUNCH DESERT PSY × BABILON-ULTRA AUDIO</button>
+      <button class="btn emerald" id="btn-run-108laps" onclick="triggerUltraBackyard108Laps()">🏃 RUN 108-LAP ULTRABACKYARDLOOP</button>
       <button class="btn" id="btn-zen-mode" onclick="toggleGlassdoorZen()">🧘 GLASSDOOR ZEN HUD</button>
       <button class="btn pink" onclick="stompSplitCritters()">💥 STOMP-TO-SPLIT (DIABLO)</button>
     </div>
@@ -491,6 +522,19 @@ pub fn write_babilon_ultra_glassdoor_playground_html(
 
     <h2 style="margin-top:10px;"><span>08 · 24 ELDER FUTHARK RUNES (n+1||[X])</span><span class="badge gold">ODIN ༒</span></h2>
     <div class="runes-grid" id="runes-grid"></div>
+
+    <h2 style="margin-top:10px;"><span>09 · GODSUN × USBC randRandPq × HONCHO BEEHIVE RL</span><span class="badge green" id="godsun-pq-badge">p/q=1</span></h2>
+    <div id="godsun-honcho-box" style="font-size:10px;line-height:1.45;"></div>
+    <div class="btn-row" style="margin-top:4px;">
+      <button class="btn gold" onclick="stepBeehivePromptRl()">🐝 WAGGLE-DANCE RL YIELD PROMPT</button>
+    </div>
+
+    <h2 style="margin-top:10px;"><span>10 · EN2E ULTRA-OMNI-MIDI × RAY-Q × KOMPRESS-ODIN × SPHERE DO</span><span class="badge pink" id="en2e-sphere-badge">&lt; E2E ^^ &lt;3</span></h2>
+    <div id="en2e-midi-sphere-box" style="font-size:10px;line-height:1.45;"></div>
+    <div id="nektar-pads-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:6px;"></div>
+
+    <h2 style="margin-top:10px;"><span>11 · 360° OS-AGNOSTIC RELEASE × ULTRABACKYARDLOOP (108 LAPS)</span><span class="badge gold" id="msun-108-badge">108/108 LAPS</span></h2>
+    <div id="machine-sun-360-box" style="font-size:10px;line-height:1.45;"></div>
   </aside>
 
   <!-- BOTTOM GLASSDOOR BAR: DESERT PSY ROCK × DEMOSCENE SPECTRUM & PRESET DECK -->
@@ -501,6 +545,9 @@ pub fn write_babilon_ultra_glassdoor_playground_html(
       <button class="btn" id="preset-plasma" onclick="selectSeedPreset('plasma')">🌀 Seed: PLASMA (Liquid Space Echo)</button>
       <button class="btn" id="preset-odin" onclick="selectSeedPreset('odin')">༒ Seed: ODIN n+1||[X] (Heimleið Tagelharpa)</button>
       <button class="btn" id="preset-demoscene" onclick="selectSeedPreset('demoscene')">👾 Seed: 8BIT-WRAITH SID + COPPERBARS</button>
+      <button class="btn gold" id="preset-godsun" onclick="selectSeedPreset('godsun')">☀️ Seed: GODSUN × plasma-hqt/n × HONCHO BEEHIVE</button>
+      <button class="btn emerald" id="preset-en2e" onclick="selectSeedPreset('en2e')">🌐 Seed: EN2E MIDI × RAY-Q × KOMPRESS-ODIN × SPHERE DO &lt;3</button>
+      <button class="btn pink" id="preset-msun108" onclick="selectSeedPreset('msun108')">🏃 Seed: 360° MACHINE-S-UN~UNITY × 108-LAP BACKYARD LOOP</button>
     </div>
     <div style="display:flex;align-items:center;gap:12px;">
       <canvas id="mini-spectrum" width="260" height="32" style="background:#060810;border:1px solid rgba(0,240,255,0.28);border-radius:6px;"></canvas>
@@ -597,6 +644,9 @@ function renderStaticTelemetry() {{
     b.onclick = () => triggerRuneChime(idx);
     rg.appendChild(b);
   }});
+  renderGodsunHonchoBox();
+  renderEn2eMidiSphereBox();
+  renderMachineSun360Box();
 }}
 
 function updateGaiaAndFaunaUI() {{
@@ -766,7 +816,7 @@ const SID_ARP = [523.25, 659.25, 783.99, 1046.50];
 
 function selectSeedPreset(preset) {{
   simState.activePreset = preset;
-  ['kyuss', 'plasma', 'odin', 'demoscene'].forEach(p => {{
+  ['kyuss', 'plasma', 'odin', 'demoscene', 'godsun', 'en2e', 'msun108'].forEach(p => {{
     const b = document.getElementById('preset-' + p);
     if (b) b.classList.toggle('active', p === preset);
   }});
@@ -774,10 +824,181 @@ function selectSeedPreset(preset) {{
     kyuss: 'kyuss-welcome-to-sky-valley-c-standard-fuzz',
     plasma: 'plasma-liquid-space-rock-phaser-echo',
     odin: 'heimleid-nordic-odin-n+1||[x]-layer-69633',
-    demoscene: '8bit-wraith-ultrawild-demoscene-copperbars'
+    demoscene: '8bit-wraith-ultrawild-demoscene-copperbars',
+    godsun: '[standardgalactic:LAST_10_COMMITS<<<ULTRA-OMNI-GODSUN::usbc-randRandPq::plasma-hqt/16::honcho-beehive',
+    en2e: 'en2e---ULTRA-OMNI-MIDI::BEEHIVE-MESH::RAY-Q-TRACING::KOMPRESS-ULTRA[PARALLEL-ODIN]::SPHERE-DO<E2E^^<3',
+    msun108: 'God-of-Machine-S-UN~unity||Omni-potencial::360-OS-Agnostic::<DO:::<ULTRABACKYARDLOOP-MAX-108laps<DO^^<3'
   }};
   document.getElementById('seed-input').value = seeds[preset] || seeds.kyuss;
-  reseedPlayground();
+  if (preset === 'msun108') triggerUltraBackyard108Laps();
+  else reseedPlayground();
+}}
+
+function renderMachineSun360Box() {{
+  const msun = INITIAL_REPORT.machine_sun_unity_360;
+  if (!msun) return;
+  const lp = msun.ultrabackyard_loop_108;
+  const abi = msun.os_agnostic_core_abi_64b;
+  document.getElementById('msun-108-badge').textContent = `${{lp.laps_completed}}/108 LAPS · #${{msun.active_layer_index}}`;
+  const box = document.getElementById('machine-sun-360-box');
+  if (!box) return;
+  box.innerHTML = `
+    <div class="kv-row"><span>OS-Agnostic Core ABI</span><b>64B MSUN v${{abi.abi_version}} · wupz xor=0x${{msun.wupz_arena_64b_xor_fold.toString(16)}} (ZA-0001=${{msun.wupz_za0001_volatile_scrub_verified}})</b></div>
+    <div class="kv-row"><span>360° Device Matrix</span><b>${{msun.device_matrix_360.length}} Sectors (${{msun.coverage_degrees_total}}°: iOS/Android/TV/ESP32/Mac/PWA)</b></div>
+    <div class="kv-row"><span>ULTRABACKYARDLOOP</span><b>${{lp.laps_completed}}/${{lp.max_laps_configured}} laps · Gray 1-bit=${{lp.all_108_gray_transitions_1bit}} · gcd=1=${{lp.all_108_laps_gcd_coprime_verified}}</b></div>
+    <div class="kv-row"><span>Keeper &amp; SpherePOP</span><b>admitted=${{lp.total_keeper_admitted}} (${{lp.total_keeper_refused}} ref) · ΣHz=${{lp.cumulative_spherepop_harmonic_sum}}</b></div>
+    <div class="kv-row"><span>108-Lap Chain Seal</span><b>${{lp.chain_sha256_seal.slice(0, 18)}}…</b></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-top:4px;font-size:8px;">
+      ${{msun.device_matrix_360.map(d => `<div style="background:rgba(0,240,255,0.08);border:1px solid rgba(0,240,255,0.28);border-radius:4px;padding:3px 4px;text-align:center;color:var(--gold);" title="${{d.operating_systems.join(' · ')}}">✔ S${{d.sector_id}} · ${{d.family_name.split(' ')[0]}}</div>`).join('')}}
+    </div>
+  `;
+}}
+
+simState.activeBackyardLap = 108;
+function triggerUltraBackyard108Laps() {{
+  const msun = INITIAL_REPORT.machine_sun_unity_360;
+  simState.activeBackyardLap = 0;
+  if (simState.backyardTimer) clearInterval(simState.backyardTimer);
+  simState.backyardTimer = setInterval(() => {{
+    simState.activeBackyardLap += 3;
+    if (simState.activeBackyardLap >= 108) {{
+      simState.activeBackyardLap = 108;
+      clearInterval(simState.backyardTimer);
+      simState.backyardTimer = null;
+      triggerRuneChime(23);
+      document.getElementById('live-banner').textContent =
+        `🏆 <DO :::<ULTRABACKYARDLOOP MAX 108laps <DO COMPLETE (108/108 Laps · 648 Keeper Admitted · 0 Refused · Layer #${{msun ? msun.active_layer_index : 69636}}) ^^ <3`;
+    }} else {{
+      if (simState.activeBackyardLap % 9 === 0) {{
+        stepSimWorldManual();
+        triggerRuneChime((simState.activeBackyardLap / 9) % 24);
+      }}
+      document.getElementById('live-banner').textContent =
+        `🏃 ULTRABACKYARDLOOP RUNNING: Lap #${{simState.activeBackyardLap}}/108 · Gray 1-bit verified · gcd(p,q)=1 · Machine-S-UN~unity 360°`;
+    }}
+    document.getElementById('msun-108-badge').textContent = `${{simState.activeBackyardLap}}/108 LAPS · #69636`;
+  }}, 45);
+}}
+
+function renderEn2eMidiSphereBox() {{
+  const e2e = INITIAL_REPORT.en2e_midi_beehive_sphere;
+  if (!e2e) return;
+  const rq = e2e.ray_q_tracing;
+  const ev = e2e.env_listening;
+  const kp = e2e.kompress_parallel_odin;
+  const sd = e2e.microversic_sphere_do;
+  document.getElementById('en2e-sphere-badge').textContent = `SPHERE=${{sd.evaluated_value}} · #${{e2e.en2e_layer_index}}`;
+  const box = document.getElementById('en2e-midi-sphere-box');
+  if (box) {{
+    box.innerHTML = `
+      <div class="kv-row"><span>ULTRA-OMNI-MIDI</span><b>Impact LX25+ (8 Pads + 8 Pots + WebMIDI)</b></div>
+      <div class="kv-row"><span>RAY-Q-TRACING SDF</span><b>${{rq.primary_rays_marched}} rays · ${{rq.sdf_sphere_hits}} sphere hits</b></div>
+      <div class="kv-row"><span>ENV LISTENING</span><b>salience=${{ev.marine_salience_score.toFixed(2)}} · ${{ev.quanttern_affective_tag}} (${{ev.wupz_32b_eq_frame_xor_hex}})</b></div>
+      <div class="kv-row"><span>KOMPRESS [PARALLEL-ODIN]</span><b>8 lanes · ${{kp.aggregate_rle_ratio.toFixed(1)}}× RLE · lossless=${{kp.all_lanes_lossless_verified}}</b></div>
+      <div class="kv-row"><span>SPHERE DO (&lt; E2E ^^ &lt;3)</span><b>${{sd.master_spherepop_expr}} = ${{sd.evaluated_value}} (${{sd.total_innermost_pops}} pops)</b></div>
+      <div style="margin-top:3px;padding:3px 6px;background:#05070e;border:1px solid rgba(0,240,255,0.25);border-radius:4px;font-family:monospace;font-size:8.5px;color:var(--cyan);overflow:hidden;white-space:nowrap;">
+        RAY-Q: ${{rq.ascii_ray_preview_row.slice(0, 38)}}
+      </div>
+    `;
+  }}
+
+  const pg = document.getElementById('nektar-pads-grid');
+  if (pg && pg.children.length === 0) {{
+    e2e.midi_setup.pad_mappings.forEach((pad, idx) => {{
+      const btn = document.createElement('button');
+      btn.className = 'btn';
+      btn.id = 'nektar-pad-' + idx;
+      btn.style.padding = '5px 3px';
+      btn.style.fontSize = '8.5px';
+      btn.style.textAlign = 'center';
+      btn.innerHTML = `<div style="color:var(--gold);font-weight:700;">${{pad.control_id}}</div><div style="font-size:7.5px;color:var(--dim);">${{pad.harmonic_hz}}Hz</div>`;
+      btn.title = `${{pad.target_domain}} — ${{pad.action_binding}}`;
+      btn.onclick = () => triggerNektarPad(idx, pad.note_or_cc, 120);
+      pg.appendChild(btn);
+    }});
+  }}
+}}
+
+function triggerNektarPad(padIdx, note, velocity) {{
+  const e2e = INITIAL_REPORT.en2e_midi_beehive_sphere;
+  if (!e2e) return;
+  const pad = e2e.midi_setup.pad_mappings[padIdx % e2e.midi_setup.pad_mappings.length];
+  const btn = document.getElementById('nektar-pad-' + padIdx);
+  if (btn) {{
+    btn.classList.add('active');
+    setTimeout(() => btn.classList.remove('active'), 260);
+  }}
+  simState.zenPulse = Math.min(1.6, (simState.zenPulse || 0) + 0.45);
+  triggerRuneChime((padIdx * 3) % 24);
+  if (padIdx === 7) stepBeehivePromptRl();
+  else stepSimWorldManual();
+  document.getElementById('live-banner').textContent =
+    `🎹 ULTRA-OMNI-MIDI ${{pad.control_id}} (Note ${{note}}, Vel ${{velocity}}) -> ${{pad.target_domain}}: ${{pad.action_binding}} < E2E ^^ <3`;
+}}
+
+// Wire both native `8b-nektar` WKWebView callbacks and Browser WebMIDI API
+window.onNektarPad = (padIndex, note, velocity) => {{
+  if (padIndex >= 0 && padIndex < 8) triggerNektarPad(padIndex, note, velocity);
+}};
+window.onNektarCC = (cc, val, norm) => {{
+  if (cc === 71) document.getElementById('sl-fuzz').value = (0.5 + norm * 3.5).toFixed(2);
+  if (cc === 72) document.getElementById('sl-itd').value = norm.toFixed(2);
+  if (cc === 75) document.getElementById('sl-spin').value = (norm * 2.5).toFixed(2);
+}};
+if (navigator.requestMIDIAccess) {{
+  navigator.requestMIDIAccess().then(midi => {{
+    for (const input of midi.inputs.values()) {{
+      input.onmidimessage = (msg) => {{
+        const [status, d1, d2] = msg.data;
+        const cmd = status & 0xF0;
+        if (cmd === 0x90 && d2 > 0 && d1 >= 36 && d1 <= 43) {{
+          triggerNektarPad(d1 - 36, d1, d2);
+        }} else if (cmd === 0xB0) {{
+          window.onNektarCC(d1, d2, d2 / 127);
+        }}
+      }};
+    }}
+  }}).catch(() => {{}});
+}}
+
+function renderGodsunHonchoBox() {{
+  const ghb = INITIAL_REPORT.godsun_honcho_beehive;
+  if (!ghb) return;
+  const pq = ghb.rand_rand_pq;
+  const rl = ghb.prompt_library_rl;
+  const hh = ghb.hermes_honcho;
+  document.getElementById('godsun-pq-badge').textContent = `gcd(p,q)=1 · #${{ghb.godsun_layer_index}}`;
+  const box = document.getElementById('godsun-honcho-box');
+  if (!box) return;
+  box.innerHTML = `
+    <div class="kv-row"><span>USBC-BIDIRECT Endpoints</span><b>${{pq.usbc_endpoints.length}} live (${{pq.usbc_endpoints[0]?.name || 'PD3.0'}})</b></div>
+    <div class="kv-row"><span>randRandPq Coprime Seed</span><b>p/q = ${{String(pq.numerator_p).slice(0,7)}}…/${{String(pq.denominator_q).slice(0,7)}}…</b></div>
+    <div class="kv-row"><span>quanT &amp; plasma-hqt/${{pq.plasma_hqt_dimension_n}}</span><b>${{pq.quanttern_4trit_tag}} · QAT #${{pq.qat_31_32_reuse_slot}}/32</b></div>
+    <div class="kv-row"><span>standardgalactic Commits</span><b>10/10 wired (1c88240..d79ef18)</b></div>
+    <div class="kv-row"><span>Hermes × Honcho Peer</span><b>${{hh.dialectic_syntheses.length}} Dialectic Syntheses</b></div>
+    <div class="kv-row"><span>5D Memory × Beehive RL</span><b>19 Hex Cells · Queen Q16=${{ghb.beehive_queen_consensus_q16}}</b></div>
+    <div style="margin-top:4px;padding:5px;background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.3);border-radius:6px;color:var(--gold);font-size:9px;word-break:break-word;">
+      <b>RL YIELDED PROMPT (${{rl.yielded_top_prompt_id}}):</b> ${{rl.yielded_prompt_string}}
+    </div>
+  `;
+}}
+
+let rlPromptCursor = 0;
+function stepBeehivePromptRl() {{
+  const ghb = INITIAL_REPORT.godsun_honcho_beehive;
+  if (!ghb) return;
+  const prompts = ghb.prompt_library_rl.prompts;
+  rlPromptCursor = (rlPromptCursor + 1) % prompts.length;
+  const chosen = prompts[rlPromptCursor];
+  chosen.rl_pulls += 1;
+  chosen.q_value_q16 += 528;
+  ghb.beehive_queen_consensus_q16 += 108;
+  ghb.prompt_library_rl.yielded_top_prompt_id = chosen.id;
+  ghb.prompt_library_rl.yielded_prompt_string = chosen.prompt_template;
+  renderGodsunHonchoBox();
+  triggerRuneChime((rlPromptCursor * 3) % 24);
+  document.getElementById('live-banner').textContent =
+    `🐝 BEEHIVE WAGGLE-DANCE RL STEP -> Yielded ${{chosen.id}} (${{chosen.slug}}) · Q_q16=${{chosen.q_value_q16}} · Honcho Dialectic Updated!`;
 }}
 
 function toggleMasterPlaygroundAudio() {{
@@ -943,11 +1164,41 @@ window.addEventListener('pointermove', e => {{
   simState.camPitch = Math.max(0.12, Math.min(1.15, simState.camPitch + dy * 0.006));
 }});
 window.addEventListener('keydown', e => {{
-  if (e.code === 'Space' && document.activeElement.tagName !== 'INPUT') {{
+  if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
+  if (e.code === 'Space') {{
     e.preventDefault();
     triggerZenPulse();
+  }} else if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter', 'MediaPlayPause'].includes(e.key)) {{
+    window.onSmartTvRemoteKey(e.key);
   }}
 }});
+
+// 360° SmartTV 10-Foot D-Pad Remote & iOS/Android Gyroscope + Service Worker
+window.onSmartTvRemoteKey = (key) => {{
+  if (key === 'ArrowLeft') simState.camYaw -= 0.18;
+  else if (key === 'ArrowRight') simState.camYaw += 0.18;
+  else if (key === 'ArrowUp') {{
+    simState.camPitch = Math.min(1.15, simState.camPitch + 0.08);
+    triggerRuneChime(simState.tick % 24);
+  }} else if (key === 'ArrowDown') {{
+    simState.camPitch = Math.max(0.12, simState.camPitch - 0.08);
+    stepSimWorldManual();
+  }} else if (key === 'Enter') {{
+    triggerUltraBackyard108Laps();
+  }} else if (key === 'MediaPlayPause') {{
+    toggleMasterPlaygroundAudio();
+  }}
+}};
+
+window.addEventListener('deviceorientation', e => {{
+  if (e.gamma !== null && e.beta !== null && !simState.dragging) {{
+    simState.camYaw += (e.gamma * 0.0005);
+  }}
+}});
+
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {{
+  navigator.serviceWorker.register('./sw.js').catch(() => {{}});
+}}
 
 function project3D(x, y, z, cx, cy, scale) {{
   const cyaw = Math.cos(simState.camYaw), syaw = Math.sin(simState.camYaw);
@@ -1062,6 +1313,35 @@ function renderBabilonUltraLoop(nowMs) {{
     if (depth > 100) {{
       ctx2d.fillStyle = (r === (simState.riffStep % 24)) ? '#ffffff' : '#ffd700cc';
       ctx2d.fillText(ELDER_FUTHARK[r], sx, sy);
+    }}
+  }}
+
+  // 3.5 Render 7 Concentric Microversic Spheres (`SPHERE DO < E2E ^^ <3`) + `RAY-Q-TRACING` Caustic Rays
+  for (let sh = 0; sh < 7; sh++) {{
+    const [scx, scy, _sd, sfov] = project3D(0, 10, 0, cx, cy, 1.0);
+    const sRad = (22 + sh * 18) * sfov * (1 + audioEnergy * 0.12 + (simState.zenPulse || 0) * 0.15);
+    ctx2d.beginPath();
+    ctx2d.arc(scx, scy, Math.max(4, sRad), 0, Math.PI * 2);
+    ctx2d.strokeStyle = PALETTE[(sh + 2) % PALETTE.length] + (sh === 6 ? '88' : '38');
+    ctx2d.lineWidth = sh === 6 ? 1.8 : 0.9;
+    ctx2d.stroke();
+  }}
+
+  // 3.8 Render 108-Lap Sacred Backyard Track Ring (`<DO :::<ULTRABACKYARDLOOP MAX 108laps <DO ^^ <3`)
+  const activeLaps = simState.activeBackyardLap || 108;
+  for (let lap = 1; lap <= 108; lap++) {{
+    const ang = (lap / 108) * Math.PI * 2 + t * 0.15;
+    const bx = Math.cos(ang) * 242;
+    const bz = Math.sin(ang) * 242;
+    const by = -118 + Math.sin(ang * 6 + t * 2) * 4;
+    const [sx, sy, depth] = project3D(bx, by, bz, cx, cy, 1.0);
+    if (depth > 90) {{
+      const done = lap <= activeLaps;
+      ctx2d.fillStyle = done ? ((lap % 9 === 0) ? '#ffd700' : '#00ff88cc') : 'rgba(255,255,255,0.18)';
+      const dotR = (lap % 9 === 0) ? 2.6 : 1.5;
+      ctx2d.beginPath();
+      ctx2d.arc(sx, sy, dotR, 0, Math.PI * 2);
+      ctx2d.fill();
     }}
   }}
 

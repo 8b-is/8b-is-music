@@ -18,7 +18,9 @@
 pub mod babilon_demoscene;
 pub mod bluetooth;
 pub mod dj_ultra;
+pub mod en2e_midi_beehive_sphere;
 pub mod godsun_honcho_beehive;
+pub mod machine_sun_unity_108laps;
 pub mod quant65k;
 pub mod shiva_g6;
 pub mod sota_mesh;
@@ -28,6 +30,23 @@ pub use babilon_demoscene::{
     build_and_write_babilon_ultra_playground, execute_babilon_ultra_demoscene,
     write_babilon_ultra_glassdoor_playground_html, BabilonUltraPlaygroundReport,
     BabilonZigguratTerrace, DemosceneEngineTelemetry, PlaygroundFaunaSnapshot,
+};
+pub use machine_sun_unity_108laps::{
+    build_360_device_release_matrix, build_and_release_machine_sun_unity_360,
+    execute_machine_sun_unity_360_and_108laps, execute_ultrabackyard_loop_108_laps,
+    write_360_release_bundles_to_disk, BackyardLapTelemetry, DeviceTarget360,
+    MachineSunUnity360ReleaseReport, MachineSunUnityCoreAbi64B, UltraBackyardLoop108Report,
+    MACHINE_SUN_UNITY_108LAPS_LAYER, ULTRABACKYARDLOOP_MAX_LAPS,
+};
+pub use en2e_midi_beehive_sphere::{
+    build_and_persist_en2e_midi_beehive_sphere, build_ultra_omni_midi_setup,
+    execute_en2e_ultra_omni_midi_beehive_sphere, execute_environment_listening_pass,
+    execute_kompress_ultra_parallel_odin, execute_layered_microversic_sphere_do,
+    execute_ray_q_tracing_pass, En2eUltraOmniMidiBeehiveSphereReport, EnvironmentListeningReport,
+    InterconnectedBeehiveMeshReport, KompressUltraParallelOdinReport,
+    LayeredMicroversicSphereDoReport, MicroversicSphereShell, MidiControlMapping,
+    ParallelOdinKompressLane, RayQTracingEngineReport, UltraOmniMidiSetupReport,
+    EN2E_SPHERE_DO_LAYER,
 };
 pub use godsun_honcho_beehive::{
     build_and_persist_godsun_honcho_beehive, execute_honcho_beehive_multid_memory,

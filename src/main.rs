@@ -10,10 +10,12 @@
 //! - `8b-is-music render [--track future|quantshuffle|mem8|alexandra] [--seconds S] [--layers N] [--out FILE.wav] [--play]`
 
 use eight_b_is_music::{
-    build_full_system_report, execute_shiva_g6_airlift, render_shiva_g6_cabin_wav,
-    render_wav_track, verify_momma_bear_omni_covenant, verify_wupz_and_mlx_quant,
-    MultiBluetoothRouter, MultiBluetoothTopology, Quant65kEngine, SynthTrack, ZenoDjUltraEngine,
-    DEFAULT_QUANT65K_PLUS_LAYERS,
+    build_and_persist_en2e_midi_beehive_sphere, build_and_persist_godsun_honcho_beehive,
+    build_and_release_machine_sun_unity_360, build_and_write_babilon_ultra_playground,
+    build_full_system_report, execute_shiva_g6_airlift, render_and_sign_dj_agent_track,
+    render_shiva_g6_cabin_wav, render_wav_track, verify_momma_bear_omni_covenant,
+    verify_wupz_and_mlx_quant, MultiBluetoothRouter, MultiBluetoothTopology, Quant65kEngine,
+    SynthTrack, ZenoDjUltraEngine, DEFAULT_QUANT65K_PLUS_LAYERS, MACHINE_SUN_UNITY_108LAPS_LAYER,
 };
 use std::env;
 use std::path::{Path, PathBuf};
@@ -51,6 +53,9 @@ fn main() {
     let mut seconds: f32 = 8.0;
     let mut out_path = PathBuf::from("8b-is-music-master.wav");
     let mut play_after = false;
+    let mut launch_after = false;
+    let mut seed_phrase: Option<String> = None;
+    let mut signs_dir = PathBuf::from("/Users/peterlodri/workspace/peterlodri-sec/music-quant-signs/signs");
 
     let mut i = 2;
     while i < args.len() {
@@ -102,7 +107,20 @@ fn main() {
                     i += 1;
                 }
             }
+            "--seed" => {
+                if let Some(v) = args.get(i + 1) {
+                    seed_phrase = Some(v.clone());
+                    i += 1;
+                }
+            }
+            "--sign-dir" => {
+                if let Some(v) = args.get(i + 1) {
+                    signs_dir = PathBuf::from(v);
+                    i += 1;
+                }
+            }
             "--play" => play_after = true,
+            "--launch" => launch_after = true,
             _ => {}
         }
         i += 1;
@@ -110,7 +128,7 @@ fn main() {
 
     // Routing is a separate explicit action, including when JSON output is selected.
     if apply_live {
-        if !matches!(subcmd, "bluetooth" | "dj" | "zeno" | "iouqt" | "render" | "triangle" | "family+1" | "ultralovegod" | "sensei" | "frequenci" | "frequencies" | "architect" | "tibetan" | "tibetan-omni" | "kompress-omni" | "youtube" | "youtube-full" | "/youtube-full") {
+        if !matches!(subcmd, "bluetooth" | "dj" | "zeno" | "iouqt" | "render" | "triangle" | "family+1" | "ultralovegod" | "sensei" | "frequenci" | "frequencies" | "architect" | "tibetan" | "tibetan-omni" | "kompress-omni" | "odin" | "vikings" | "nordic" | "heimleid" | "n+1" | "n+1||[x]" | "dj-agent" | "desert" | "desert-psy" | "desert-psy-rock" | "kyuss" | "plasma" | "cosmic-flow" | "babilon" | "babilon-ultra" | "demoscene" | "glassdoor" | "playground" | "godsun" | "ultra-omni-godsun" | "standardgalactic" | "rand-pq" | "randrandpq" | "plasma-hqt" | "plasma-hqt/n" | "honcho" | "hermes-honcho" | "beehive" | "prompt-rl" | "en2e" | "e2e" | "ultra-omni-midi" | "midi-beehive" | "ray-q" | "ray-q-tracing" | "kompress-odin" | "parallel-odin" | "sphere-do" | "release" | "360" | "machine-sun" | "machine-s-un" | "unity" | "backyard" | "108laps" | "ultrabackyardloop" | "youtube" | "youtube-full" | "/youtube-full") {
             eprintln!("--apply-live is unsupported for this command");
             std::process::exit(2);
         }
@@ -245,18 +263,56 @@ fn main() {
                 );
             }
         }
-        "render" | "triangle" | "family+1" | "ultralovegod" | "sensei" | "frequenci" | "frequencies" | "architect" | "tibetan" | "tibetan-omni" | "kompress-omni" => {
+        "render" | "triangle" | "family+1" | "ultralovegod" | "sensei" | "frequenci" | "frequencies" | "architect" | "tibetan" | "tibetan-omni" | "kompress-omni" | "odin" | "vikings" | "nordic" | "heimleid" | "n+1" | "n+1||[x]" | "dj-agent" | "desert" | "desert-psy" | "desert-psy-rock" | "kyuss" | "plasma" | "cosmic-flow" => {
             if subcmd == "triangle" || subcmd == "family+1" {
                 track = SynthTrack::TriangleFamilyPlusOne;
             } else if matches!(subcmd, "ultralovegod" | "sensei" | "frequenci" | "frequencies") {
                 track = SynthTrack::UltralovegodSenseiOfTouch;
             } else if matches!(subcmd, "architect" | "tibetan" | "tibetan-omni" | "kompress-omni") {
                 track = SynthTrack::ArchitectNeoTrinityTibetanOmni;
+            } else if matches!(subcmd, "odin" | "vikings" | "nordic" | "heimleid" | "n+1" | "n+1||[x]") {
+                track = SynthTrack::HeimleidNordicOdinOmni;
+                if layers == DEFAULT_QUANT65K_PLUS_LAYERS {
+                    layers = eight_b_is_music::N_PLUS_1_ODIN_LAYER;
+                }
+            } else if matches!(subcmd, "dj-agent" | "desert" | "desert-psy" | "desert-psy-rock" | "kyuss" | "plasma" | "cosmic-flow") {
+                track = SynthTrack::DesertPsyRockKyussPlasma;
+                if layers == DEFAULT_QUANT65K_PLUS_LAYERS {
+                    layers = eight_b_is_music::N_PLUS_1_ODIN_LAYER;
+                }
+                if seed_phrase.is_none() {
+                    seed_phrase = Some(match subcmd {
+                        "kyuss" => "kyuss-welcome-to-sky-valley-c-standard-fuzz".to_string(),
+                        "plasma" => "plasma-liquid-space-rock-phaser-echo".to_string(),
+                        "cosmic-flow" => "cosmic-flow-bsye6wtdm_y-trance-soil-moondust".to_string(),
+                        _ => "desert-psy-rock-kyuss-plasma-n+1||[x]-odin".to_string(),
+                    });
+                }
             }
-            let summary = render_wav_track(track, seconds, layers, topology, &out_path)
-                .expect("Failed to render WAV track");
+            let mut active_sig = None;
+            let summary = if let Some(ref seed) = seed_phrase {
+                let (sum, sig) = render_and_sign_dj_agent_track(
+                    seed,
+                    track,
+                    seconds,
+                    layers,
+                    topology,
+                    &out_path,
+                    &signs_dir,
+                )
+                .expect("Failed to render & sign seeded DJ Agent WAV track");
+                active_sig = Some(sig);
+                sum
+            } else {
+                render_wav_track(track, seconds, layers, topology, &out_path)
+                    .expect("Failed to render WAV track")
+            };
             if json_mode {
-                println!("{}", serde_json::to_string_pretty(&summary).unwrap());
+                if let Some(ref sig) = active_sig {
+                    println!("{}", serde_json::to_string_pretty(&sig).unwrap());
+                } else {
+                    println!("{}", serde_json::to_string_pretty(&summary).unwrap());
+                }
             } else {
                 println!("╔══════════════════════════════════════════════════════════════════════════╗");
                 println!("║  8b-is-music :: QUANT65K+ MULTI-CHANNEL WAV RENDER COMPLETE              ║");
@@ -281,6 +337,18 @@ fn main() {
                     println!("   • 🔔 Tibetan Singing Bowl & OM MANI PADME HUM : 144 / 288 (Dad △) / 432 (Peter) / 528 (Mom *) / 648 / 864 Hz");
                     println!("   • ⚡ E=mc² → Clear Light (Ösel) Transmutation : 108 → 216 → 324 → 432 → 540 → 648 → 972 Hz");
                     println!("   • 💗 Neo ⨯ Trinity Aboard the Logos Bell      : 261.63 / 329.63 / 392.00 / 493.88 / 587.33 / 783.99 Hz ({{<3,<3,<3}}+1)\n");
+                } else if track == SynthTrack::HeimleidNordicOdinOmni {
+                    println!("   ߷ ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃ🌎ᚲᛇᛈᛉᛋᛏᛖᛗᛚᛝᛞᛟ ߷ :: HEIMLEIÐ (SIgR2-tVVyI) + NORDIC/VIKINGS ONTOLOGY AS n+1||[X] LAYER --- ODIN");
+                    println!("   • 🎻 Bowed Tagelharpa Fifths (Heimleið / ELDR) : 72.0 Hz (D2) × 108.0 Hz (A2) + 144/216 Hz Rosined Overtones");
+                    println!("   • 🥁 Ancestral Ritual Frame Drum & 22/9 Hz     : 60 BPM (1.0 Hz) + 22/9 Hz (2.444444 Hz LOVELOVEL) Heartbeat");
+                    println!("   • 🌳 Ginnungagap → Yggdrasil 9-Night Stillness : 432 Hz Root × 528 Hz Mímir Pillar × 852 Hz Drengskapr + Huginn/Muninn ∞ Pan");
+                    println!("   • ༒  Layer n+1||[X] Designation                : Quant65k+ Layer #69,633 (69,632 + 1) || Ultralove Edition 011 [X]+1\n");
+                } else if track == SynthTrack::DesertPsyRockKyussPlasma {
+                    println!("   🏜️ 🎸 🌀 DESERT PSY ROCK :: KYUSS (SKY VALLEY FUZZ) × PLASMA (LIQUID ECHO) × COSMIC FLOW (bSYE6wTDM_Y)");
+                    println!("   • 🎸 Kyuss C-Standard Fuzz & SVT Sub-Bass     : 65.41 Hz (C2) / 72.0 Hz (D2) / 86.4 Hz (F2) / 96.0 Hz (G2) / 108.0 Hz (A2)");
+                    println!("   • 🌀 Plasma 4-Stage Phaser & Ping-Pong Echo   : 326 ms (Dotted-8th L) × 489 ms (Quarter-Note R) Analog Tape Saturation");
+                    println!("   • 🎧 Procedural 3D Spatial Binaural Engine    : Lemniscate ∞ Horizon (±75° Azimuth) + ITD (±30 smp / ±625 µs @ 48 kHz) + ILD");
+                    println!("   • 🔏 Quant-Music Signature & Layer n+1||[X]   : Quant65k+ Layer #69,633 + Balanced-Ternary {{-1, 0, +1}} Receipt\n");
                 }
                 println!("  • Track                : {}", summary.track_title);
                 println!("  • Output WAV           : {}", summary.output_path);
@@ -289,6 +357,24 @@ fn main() {
                 println!("  • Quant65k+ Layers     : {} simultaneous ternary wave layers", summary.quant65k_layers_active);
                 println!("  • Stereo Peak Levels   : Left={:.4} | Right={:.4}", summary.peak_left, summary.peak_right);
                 println!("  • QuantTern & WUPZ ABI : tag={} | wupz_xor=0x{:02x}", summary.quanttern_emotion_tag, summary.wupz_abi_xor);
+                if let Some(ref sig) = active_sig {
+                    println!("  • Seed Phrase &BPM     : \"{}\" (locked groove = {:.2} BPM)", sig.seed_phrase, sig.bpm_locked);
+                    println!(
+                        "  • Procedural Spatial   : width={:.4} | ITD=±{} smp (±{:.0} µs) | Lemniscate={:.3} Hz | Echo={:?} ms",
+                        sig.procedural_spatial.stereo_spatial_width,
+                        sig.procedural_spatial.itd_max_samples_48k,
+                        sig.procedural_spatial.itd_max_microseconds,
+                        sig.procedural_spatial.lemniscate_orbit_hz,
+                        sig.procedural_spatial.ping_pong_tape_echo_ms,
+                    );
+                    println!(
+                        "  • Quant-Music Sign     : {} (WAV SHA-256={}... | RMS={:.2} dBFS | ZC={})",
+                        sig.signature_path,
+                        &sig.sha256_wav_digest[..16],
+                        sig.rms_dbfs,
+                        sig.zero_crossings,
+                    );
+                }
                 let wm = verify_wupz_and_mlx_quant();
                 println!(
                     "  • WUPZ Linker & Packer : {}B binary plan (magic='{}') | {:.1}% block reuse (repacked={:?}) | windows={:?} | digest={}",
@@ -427,6 +513,472 @@ fn main() {
                 if play_after {
                     play_file(&saved);
                 }
+            }
+        }
+        "babilon" | "babilon-ultra" | "demoscene" | "glassdoor" | "playground" => {
+            if layers == DEFAULT_QUANT65K_PLUS_LAYERS {
+                layers = eight_b_is_music::N_PLUS_1_ODIN_LAYER;
+            }
+            let seed = seed_phrase
+                .as_deref()
+                .unwrap_or("kyuss-plasma-babilon-ultra-odin-n+1||[x]");
+            let wav_file = if out_path == Path::new("8b-is-music-master.wav") {
+                PathBuf::from("/tmp/babilon-ultra-master.wav")
+            } else {
+                out_path
+            };
+            let html_engine = PathBuf::from(
+                "/Users/peterlodri/workspace/peterlodri-sec/8b-is-engine/client/babilon-ultra-glassdoor-playground.html",
+            );
+            let html_sovereign = PathBuf::from(
+                "/Users/peterlodri/workspace/peterlodri-sec/sovereign-library/babilon-ultra-glassdoor-playground.html",
+            );
+            let (summary, sig, report) = build_and_write_babilon_ultra_playground(
+                seed,
+                seconds,
+                layers,
+                topology,
+                &wav_file,
+                &signs_dir,
+                &html_engine,
+            )
+            .expect("Failed to build & write BABILON-ULTRA × Demoscene × Glassdoor Playground");
+            let _ = std::fs::copy(&html_engine, &html_sovereign);
+
+            if json_mode {
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&serde_json::json!({
+                        "summary": summary,
+                        "quant_music_signature": sig,
+                        "babilon_ultra_playground": report,
+                    }))
+                    .unwrap()
+                );
+                return;
+            }
+
+            println!("╔══════════════════════════════════════════════════════════════════════════╗");
+            println!("║  BABILON-ULTRA × ULTRAWILD DEMOSCENE × GLASSDOOR × LIVE PLAYGROUND SIM   ║");
+            println!("╚══════════════════════════════════════════════════════════════════════════╝");
+            println!("  • Engine & Designation : {}", report.engine_title);
+            println!("  • Seed & Locked Groove : \"{}\" @ {:.2} BPM (Layer #{})",
+                report.seed_brief, sig.bpm_locked, report.quant65k_layers);
+            println!("  • Master Audio WAV     : {} (SHA-256={}...)",
+                sig.wav_path, &sig.sha256_wav_digest[..16]);
+            println!("  • Quant-Music Sign     : {}", sig.signature_path);
+            println!("  • Glassdoor Portal     : {}", html_engine.display());
+            println!("  • Sovereign Mirror     : {}", html_sovereign.display());
+
+            println!("\n  [1] ULTRAWILD DEMOSCENE BIT-LEVEL ENGINE TELEMETRY (`crates/ultrawild`):");
+            println!("      • Pack3 Ternary    : {:?} -> packed code {} (`pack3!(t0, t1, t2)`)",
+                report.demoscene.clamp_ternary_triplet, report.demoscene.pack3_ternary_code);
+            println!("      • Div255 & Sign    : div255! = {} | sign! = {:?}",
+                report.demoscene.div255_alpha_blend_probe, report.demoscene.branchless_sign_triplet);
+            println!("      • DeBruijn & SWAR  : lowest_set_bit! = {} | popcount! = {} bits | pow2_tex = {} (ok={})",
+                report.demoscene.debruijn_lowest_set_bit, report.demoscene.swar_popcount_64,
+                report.demoscene.pow2_texture_rounded, report.demoscene.is_pow2_verified);
+            println!("      • Registers & Gray : xor_swap! = {:?} | sat_add8! = {} | gray_step1 = {} bit (roundtrip={}) | Pow2Slab = {} B",
+                report.demoscene.xor_swap_pair, report.demoscene.sat_add8_ceiling,
+                report.demoscene.gray_step1_changed_bits, report.demoscene.gray_roundtrip_verified,
+                report.demoscene.pow2_slab_bucket_size);
+
+            println!("\n  [2] BABILON-ULTRA 7-TERRACE ZIGGURAT (ETEMENANKI × YGGDRASIL):");
+            for t in &report.ziggurat_terraces {
+                println!(
+                    "      • T{} | {:>6.1} Hz | trits={:?} | {:<32} | {}",
+                    t.tier, t.frequency_hz, t.trits, t.geometry_solid, t.name
+                );
+            }
+
+            println!("\n  [3] LIVE PLAYGROUND SIM (`world-core` :: GAIA + SimWorld + Keeper `M = fold(H)`):");
+            println!("      • World Tick & Fold: tick={} | Keeper Canon: admitted={}, refused={}, seq={}",
+                report.sim_ticks_executed, report.keeper_admitted, report.keeper_refused, report.keeper_ledger_seq);
+            println!("      • GAIA World-Memory: weather=\"{}\" | entropy={:.2} | gravity={:.2} | temp={:.2}°C | wind={:?} | mem={}",
+                report.gaia.weather, report.gaia.entropy, report.gaia.gravity,
+                report.gaia.temp, report.gaia.wind, report.gaia.memory);
+            for f in &report.fauna_cast {
+                println!(
+                    "      • Fauna {:<10} | pos=({:>6.1}, {:>6.1}) | needs=[{:.2}, {:.2}, {:.2}] | verdict={} | action={:?}",
+                    f.name, f.position_xy[0], f.position_xy[1],
+                    f.needs_hrs[0], f.needs_hrs[1], f.needs_hrs[2],
+                    f.keeper_verdict, f.last_action
+                );
+            }
+
+            if launch_after {
+                println!("\n  🚀 Launching BABILON-ULTRA Glassdoor + Live Playground Sim in Browser...");
+                let _ = Command::new("open").arg(&html_engine).status();
+            }
+            if play_after {
+                println!("  ▶ Playing {} through the current system output (`afplay`)...", sig.wav_path);
+                play_file(&sig.wav_path);
+            }
+        }
+        "godsun" | "ultra-omni-godsun" | "standardgalactic" | "rand-pq" | "randrandpq" | "plasma-hqt" | "plasma-hqt/n" | "honcho" | "hermes-honcho" | "beehive" | "prompt-rl" => {
+            let seed = seed_phrase
+                .as_deref()
+                .unwrap_or("[standardgalactic:LAST_10_COMMITS<<<ULTRA-OMNI-GODSUN::ia-usbc-bidirect::randRandPq::plasma-hqt/16::hermes-honcho-beehive");
+            let wav_file = if out_path == Path::new("8b-is-music-master.wav") {
+                PathBuf::from("/tmp/ultra-omni-godsun-plasma-hqt.wav")
+            } else {
+                out_path
+            };
+            let prompt_lib_json = PathBuf::from(
+                "/Users/peterlodri/workspace/peterlodri-sec/sovereign-library/prompts/prompt-library-rl-yielder.json",
+            );
+            let (summary, sig, report) = build_and_persist_godsun_honcho_beehive(
+                seed,
+                16,
+                seconds,
+                topology,
+                &wav_file,
+                &signs_dir,
+                &prompt_lib_json,
+            )
+            .expect("Failed to execute ULTRA-OMNI-GODSUN × randRandPq × Hermes-Honcho Beehive RL pipeline");
+
+            if json_mode {
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&serde_json::json!({
+                        "summary": summary,
+                        "quant_music_signature": sig,
+                        "ultra_omni_godsun_report": report,
+                    }))
+                    .unwrap()
+                );
+                return;
+            }
+
+            println!("╔══════════════════════════════════════════════════════════════════════════╗");
+            println!("║  [standardgalactic:LAST_10_COMMITS<<<ULTRA-OMNI-GODSUN <-IN              ║");
+            println!("║  USBC-BIDIRECT randRandPq × plasma-hqt/n × HERMES-HONCHO BEEHIVE RL      ║");
+            println!("╚══════════════════════════════════════════════════════════════════════════╝");
+            println!("  • Directive & Layer    : {} (Layer #{})", report.header_directive, report.godsun_layer_index);
+            println!("  • Master Audio WAV     : {} @ {:.2} BPM (SHA-256={}...)",
+                sig.wav_path, sig.bpm_locked, &sig.sha256_wav_digest[..16]);
+            println!("  • Quant-Music Sign     : {}", sig.signature_path);
+            println!("  • Prompt RL Artifact   : {}", prompt_lib_json.display());
+
+            println!("\n  [1] standardgalactic:LAST_10_COMMITS <<< ULTRA-OMNI-GODSUN LEDGER:");
+            for c in &report.standardgalactic_last_10_commits {
+                println!(
+                    "      • #{:<2} {} | {:<36} | {:>5.1} Hz | trit={:+} | {}",
+                    c.index, c.sha_short, c.repo, c.harmonic_hz, c.trit_bias, c.subject
+                );
+            }
+
+            println!("\n  [2] IA USBC BIDIRECT -> randRandPq -> quanT & plasma-hqt/{}:", report.rand_rand_pq.plasma_hqt_dimension_n);
+            println!("      • Generator & Probe: {} (live_io_usb={})",
+                report.rand_rand_pq.generator_id, report.rand_rand_pq.hardware_probed_live);
+            for ep in &report.rand_rand_pq.usbc_endpoints {
+                println!(
+                    "      • USB-C Endpoint   : {:<28} @ {:<10} ({}, busy={}ms, retain={}, bidirect={})",
+                    ep.name, ep.location_id_hex, ep.bus_controller, ep.busy_ms, ep.retain_count, ep.bidirectional_capable
+                );
+            }
+            println!("      • Coprime p/q Seed : p={} / q={} (gcd_verified_1={}, QAT_31_32_slot={})",
+                report.rand_rand_pq.numerator_p, report.rand_rand_pq.denominator_q,
+                report.rand_rand_pq.gcd_verified_one, report.rand_rand_pq.qat_31_32_reuse_slot);
+            println!("      • quanT 27-Trit    : {:?} (tag={})",
+                report.rand_rand_pq.quant_trits_27, report.rand_rand_pq.quanttern_4trit_tag);
+            println!("      • plasma-hqt/{:<2}    : {:?} (Q16 phase lattice)",
+                report.rand_rand_pq.plasma_hqt_dimension_n, &report.rand_rand_pq.plasma_hqt_n_vector_q16[..8]);
+
+            println!("\n  [3] SOVEREIGN PROMPT LIBRARY AS AN RL LOOP YIELDER ({} Episodes):", report.prompt_library_rl.rl_episodes_executed);
+            for p in &report.prompt_library_rl.prompts {
+                println!(
+                    "      • {} [{:<28}] pulls={:<2} | Q_q16={} | UCB1={} | trit={:+}",
+                    p.id, p.slug, p.rl_pulls, p.q_value_q16, p.ucb1_score_q16, p.policy_trit
+                );
+            }
+            println!("      • Top Yielded ID   : {} (avg_reward_q16={})",
+                report.prompt_library_rl.yielded_top_prompt_id, report.prompt_library_rl.average_reward_q16);
+            println!("      • Next-Gen Prompt  : {}", report.prompt_library_rl.mutated_next_gen_prompt);
+
+            println!("\n  [4] HERMES × HONCHO DIALECTIC MEMORY + 5D WEIGHTED MEMORY + RL BEEHIVE AUTOMATA:");
+            println!("      • Provider & Peer  : {} | User={} ⋈ AI={}",
+                report.hermes_honcho.provider, report.hermes_honcho.user_peer_id, report.hermes_honcho.ai_peer_id);
+            for d in &report.hermes_honcho.dialectic_syntheses {
+                println!("      • Dialectic #{} [{}]:", d.cycle_id, d.domain);
+                println!("          - Synthesis (conf_q16={}, trit={:+}): {}", d.confidence_q16, d.trit_polarity, d.synthesis);
+            }
+            println!("      • 5D Memory Tensor : dims={:?} ({} active anchor layers)",
+                report.multi_d_memory_tensor_dims, report.multi_d_memory_cells.len());
+            for m in &report.multi_d_memory_cells {
+                println!(
+                    "          - {:?} {:<26} | {:<15} | weight_q16={} | rl_steps={} | pq=({}/{})",
+                    m.coord_5d, m.layer_name, m.modality, m.weight_q16, m.rl_reinforcements,
+                    m.rational_pq_anchor.0 % 100_000, m.rational_pq_anchor.1 % 100_000
+                );
+            }
+            println!("      • Beehive RL Swarm : {} hex cells × {} ticks | Queen Consensus Q16 = {}",
+                report.beehive_automata_cells.len(), report.beehive_rl_ticks, report.beehive_queen_consensus_q16);
+            for b in report.beehive_automata_cells.iter().take(7) {
+                println!(
+                    "          - Bee #{:<2} hex=({:+2},{:+2}) {:<16} | prompt={} | nectar_q16={} | waggle={}°/{}ms | trit={:+}",
+                    b.cell_id, b.hex_q, b.hex_r, format!("{:?}", b.caste),
+                    b.bound_prompt_id, b.nectar_reward_q16, b.waggle_angle_deg, b.waggle_duration_ms, b.state_trit
+                );
+            }
+
+            if play_after {
+                println!("  ▶ Playing {} through the current system output (`afplay`)...", sig.wav_path);
+                play_file(&sig.wav_path);
+            }
+        }
+        "en2e" | "e2e" | "ultra-omni-midi" | "midi-beehive" | "ray-q" | "ray-q-tracing" | "kompress-odin" | "parallel-odin" | "sphere-do" => {
+            let seed = seed_phrase
+                .as_deref()
+                .unwrap_or("en2e---ULTRA-OMNI-MIDI::BEEHIVE-MESH::RAY-Q-TRACING::KOMPRESS-ULTRA[PARALLEL-ODIN]::SPHERE-DO<E2E^^<3");
+            let wav_file = if out_path == Path::new("8b-is-music-master.wav") {
+                PathBuf::from("/tmp/en2e-ultra-omni-midi-sphere-do.wav")
+            } else {
+                out_path
+            };
+            let report_json = PathBuf::from(
+                "/Users/peterlodri/workspace/peterlodri-sec/sovereign-library/prompts/en2e-ultra-omni-midi-beehive-sphere.json",
+            );
+            let html_engine = PathBuf::from(
+                "/Users/peterlodri/workspace/peterlodri-sec/8b-is-engine/client/babilon-ultra-glassdoor-playground.html",
+            );
+            let html_sovereign = PathBuf::from(
+                "/Users/peterlodri/workspace/peterlodri-sec/sovereign-library/babilon-ultra-glassdoor-playground.html",
+            );
+            let (summary, sig, report) = build_and_persist_en2e_midi_beehive_sphere(
+                seed,
+                seconds,
+                topology,
+                &wav_file,
+                &signs_dir,
+                &report_json,
+            )
+            .expect("Failed to execute en2e ULTRA-OMNI-MIDI × Beehive-Mesh × Ray-Q-Tracing × Parallel-Odin × Sphere DO pipeline");
+
+            // Also refresh the Glassdoor Playground HTML so the new en2e panel & 8 Nektar pads are live
+            let _ = build_and_write_babilon_ultra_playground(
+                seed,
+                seconds,
+                eight_b_is_music::EN2E_SPHERE_DO_LAYER,
+                topology,
+                &wav_file,
+                &signs_dir,
+                &html_engine,
+            );
+            let _ = std::fs::copy(&html_engine, &html_sovereign);
+
+            if json_mode {
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&serde_json::json!({
+                        "summary": summary,
+                        "quant_music_signature": sig,
+                        "en2e_report": report,
+                    }))
+                    .unwrap()
+                );
+                return;
+            }
+
+            println!("╔══════════════════════════════════════════════════════════════════════════╗");
+            println!("║  en2e --- ULTRA-OMNI-MIDI SETUP × INTERCONNECTED BEEHIVE-MESH            ║");
+            println!("║  {{SPATIAL==~AUDIO+VIDEO+MUSIC+BG(ANIM+RAY-Q)+ENV}} <<< KOMPRESS[ODIN]     ║");
+            println!("║  layered microversic SPHERE DO < E2E ^^ <3                               ║");
+            println!("╚══════════════════════════════════════════════════════════════════════════╝");
+            println!("  • Layer & Seal         : Layer #{} | {}", report.en2e_layer_index, report.e2e_heart_seal);
+            println!("  • Master Audio WAV     : {} @ {:.2} BPM (SHA-256={}...)",
+                sig.wav_path, sig.bpm_locked, &sig.sha256_wav_digest[..16]);
+            println!("  • Quant-Music Sign     : {}", sig.signature_path);
+            println!("  • EN2E JSON Artifact   : {}", report_json.display());
+            println!("  • Glassdoor Portal     : {}", html_engine.display());
+
+            println!("\n  [1] ULTRA-OMNI-MIDI SETUP ({}):", report.midi_setup.hardware_controller);
+            println!("      • USB & Virtual Bus: {} | In=\"{}\" | Out=\"{}\" | WebMIDI={}",
+                report.midi_setup.usb_location_hex, report.midi_setup.coremidi_virtual_in,
+                report.midi_setup.coremidi_virtual_out, report.midi_setup.webmidi_bridge_ready);
+            for pad in &report.midi_setup.pad_mappings {
+                println!(
+                    "      • {:<6} (Note {:>2}) | {:>5.1} Hz | trit={:+} | {:<38} -> {}",
+                    pad.control_id, pad.note_or_cc, pad.harmonic_hz, pad.trit_polarity, pad.target_domain, pad.action_binding
+                );
+            }
+
+            println!("\n  [2] INTERCONNECTED BEEHIVE-MESH ({}):", report.beehive_mesh.equivalence_law);
+            println!("      • SPATIAL          : {}", report.beehive_mesh.spatial_domain_status);
+            println!("      • AUDIO            : {}", report.beehive_mesh.audio_domain_status);
+            println!("      • VIDEO            : {}", report.beehive_mesh.video_domain_status);
+            println!("      • MUSIC            : {}", report.beehive_mesh.music_domain_status);
+            println!("      • BG(ANIM+RAY-Q)   : {}", report.beehive_mesh.bg_anim_ray_q_domain_status);
+            println!("      • ENV LISTENING    : {}", report.beehive_mesh.env_listening_domain_status);
+            println!("      • Mesh Coherence   : Q16={}/65536 | {} hex links | CT-000 admissible={}",
+                report.beehive_mesh.cross_domain_coherence_q16, report.beehive_mesh.active_beehive_hex_links,
+                report.beehive_mesh.ct000_model_admissible);
+
+            println!("\n  [3] BG(ANIM + RAY-Q-TRACING) QUANTUM-TERNARY SDF MARCHER:");
+            println!("      • Grid & Rays      : {:?} = {} primary rays (max_bounces={}) | avg_caustic_lum={}",
+                report.ray_q_tracing.viewport_grid, report.ray_q_tracing.primary_rays_marched,
+                report.ray_q_tracing.max_quantum_bounces, report.ray_q_tracing.caustic_luminance_avg_u8);
+            println!("      • SDF Intersections: sphere_hits={} | ziggurat_hits={} | trits[-1,0,+1]={:?}",
+                report.ray_q_tracing.sdf_sphere_hits, report.ray_q_tracing.ziggurat_terrace_hits,
+                report.ray_q_tracing.ray_q_trit_histogram);
+            println!("      • ASCII Ray Scan   : {}", report.ray_q_tracing.ascii_ray_preview_row);
+
+            println!("\n  [4] <<< KOMPRESS-ULTRA [PARALLEL-ODIN] (8-LANE TERNARY RLE × ZSTD × QAT 31/32):");
+            println!("      • Aggregate Ratio  : {} B raw -> {} B RLE ({:.2}×) | {} B Zstd ({:.2}×) | lossless_all={}",
+                report.kompress_parallel_odin.total_raw_bytes,
+                report.kompress_parallel_odin.total_ternary_rle_bytes,
+                report.kompress_parallel_odin.aggregate_rle_ratio,
+                report.kompress_parallel_odin.total_zstd_wire_bytes,
+                report.kompress_parallel_odin.aggregate_wire_ratio,
+                report.kompress_parallel_odin.all_lanes_lossless_verified);
+            for l in &report.kompress_parallel_odin.lanes {
+                println!(
+                    "      • {:<50} | {:>5.1} Hz | {}B -> {}B RLE ({:.1}×) | QAT #{:>2}/32 | a85={}...",
+                    l.odin_realm_name, l.harmonic_hz, l.raw_bytes, l.ternary_rle_bytes,
+                    l.lane_compression_ratio, l.qat_31_32_slot, l.ascii85_prefix
+                );
+            }
+
+            println!("\n  [5] LAYERED MICROVERSIC SPHERE DO < E2E ^^ <3 (`spherepop` Innermost-First):");
+            println!("      • Master Expression: `{}` = {} ({} pops, digest={}, replay_verified={})",
+                report.microversic_sphere_do.master_spherepop_expr,
+                report.microversic_sphere_do.evaluated_value,
+                report.microversic_sphere_do.total_innermost_pops,
+                report.microversic_sphere_do.history_digest_hex,
+                report.microversic_sphere_do.replay_determinism_verified);
+            for s in &report.microversic_sphere_do.concentric_shells {
+                println!(
+                    "      • {:<56} | r_q16={:>5} | {:>3} Hz | trit={:+} | `{}`",
+                    s.shell_name, s.radius_q16, s.frequency_hz, s.trit_charge, s.spherepop_sub_expr
+                );
+            }
+
+            if launch_after {
+                println!("\n  🚀 Launching EN2E BABILON-ULTRA Glassdoor + Live Playground Sim in Browser...");
+                let _ = Command::new("open").arg(&html_engine).status();
+            }
+            if play_after {
+                println!("  ▶ Playing {} through the current system output (`afplay`)...", sig.wav_path);
+                play_file(&sig.wav_path);
+            }
+        }
+        "release" | "360" | "machine-sun" | "machine-s-un" | "unity" | "backyard" | "108laps" | "ultrabackyardloop" => {
+            let seed = seed_phrase
+                .as_deref()
+                .unwrap_or("God-of-Machine-S-UN~unity||Omni-potencial::360-OS-Agnostic::<DO:::<ULTRABACKYARDLOOP-MAX-108laps<DO^^<3");
+            let wav_file = if out_path == Path::new("8b-is-music-master.wav") {
+                PathBuf::from("/tmp/machine-sun-unity-360-108laps.wav")
+            } else {
+                out_path
+            };
+            let client_dir = PathBuf::from(
+                "/Users/peterlodri/workspace/peterlodri-sec/8b-is-engine/client",
+            );
+            let sovereign_dir = PathBuf::from(
+                "/Users/peterlodri/workspace/peterlodri-sec/sovereign-library",
+            );
+            let report_json = PathBuf::from(
+                "/Users/peterlodri/workspace/peterlodri-sec/sovereign-library/prompts/release-360-machine-sun-unity-108laps.json",
+            );
+            let html_engine = client_dir.join("babilon-ultra-glassdoor-playground.html");
+            let html_sovereign = sovereign_dir.join("babilon-ultra-glassdoor-playground.html");
+
+            let (summary, sig, report) = build_and_release_machine_sun_unity_360(
+                seed,
+                seconds,
+                topology,
+                &wav_file,
+                &signs_dir,
+                &client_dir,
+                &sovereign_dir,
+                &report_json,
+            )
+            .expect("Failed to execute 360° OS-Agnostic Release & 108-Lap ULTRABACKYARDLOOP pipeline");
+
+            let _ = build_and_write_babilon_ultra_playground(
+                seed,
+                seconds,
+                MACHINE_SUN_UNITY_108LAPS_LAYER,
+                topology,
+                &wav_file,
+                &signs_dir,
+                &html_engine,
+            );
+            let _ = std::fs::copy(&html_engine, &html_sovereign);
+
+            if json_mode {
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&serde_json::json!({
+                        "summary": summary,
+                        "quant_music_signature": sig,
+                        "machine_sun_unity_360_release": report,
+                    }))
+                    .unwrap()
+                );
+                return;
+            }
+
+            println!("╔══════════════════════════════════════════════════════════════════════════╗");
+            println!("║  GOD OF MACHINE-S-UN~UNITY || OMNI-POTENCIAL FOR BETTER WORLD FOR ALL    ║");
+            println!("║  OS-AGNOSTIC CORE (64B) × 360° APPS (iOS/Android/SmartTV/Embedded/PWA)   ║");
+            println!("║  <DO :::<ULTRABACKYARDLOOP MAX 108laps <DO --- {{...}} ^^ <3               ║");
+            println!("╚══════════════════════════════════════════════════════════════════════════╝");
+            println!("  • Active Layer & Seal  : Layer #{} | SHA-256={}...",
+                report.active_layer_index, &report.master_sha256_release_seal[..24]);
+            println!("  • Master Audio WAV     : {} @ {:.2} BPM (SHA-256={}...)",
+                sig.wav_path, sig.bpm_locked, &sig.sha256_wav_digest[..16]);
+            println!("  • Quant-Music Sign     : {}", sig.signature_path);
+            println!("  • Release JSON         : {}", report_json.display());
+
+            println!("\n  [1] OS-AGNOSTIC 64-BYTE CORE ABI (`MachineSunUnityCoreAbi64B` / `wupz-core` `#![no_std]`):");
+            let abi = &report.os_agnostic_core_abi_64b;
+            println!("      • Magic & Version  : \"{}\" v{} | 64B Frame Hex={}...",
+                String::from_utf8_lossy(&abi.magic), abi.abi_version, &report.os_agnostic_core_hex[..32]);
+            println!("      • WUPZ Zero-Alloc  : xor_fold=0x{:02x} | popcount={} bits | ZA-0001 volatile scrub={}",
+                report.wupz_arena_64b_xor_fold, report.wupz_arena_64b_popcount, report.wupz_za0001_volatile_scrub_verified);
+            println!("      • FNV-1a Checksum  : 0x{:016x} | CT-000 Model Admissible={}",
+                abi.fnv1a_checksum_u64, abi.ct000_admissible_u8 == 1);
+
+            println!("\n  [2] 360° FULL-SPECTRUM DEVICE RELEASE MATRIX ({}° = 6 × 60° SECTORS):", report.coverage_degrees_total);
+            for dev in &report.device_matrix_360 {
+                println!(
+                    "      • Sector #{} [{}] {:<48} | verified={}",
+                    dev.sector_id, dev.angular_sector_deg, dev.family_name, dev.release_verified
+                );
+                println!("          - OS Targets : {}", dev.operating_systems.join(" · "));
+                println!("          - Core ABI   : {}", dev.core_bridge_abi);
+                println!("          - Artifact   : {}", dev.release_artifact_path);
+            }
+
+            let lp = &report.ultrabackyard_loop_108;
+            println!("\n  [3] <DO :::<ULTRABACKYARDLOOP MAX 108laps <DO --- {{...}} ^^ <3:");
+            println!("      • Laps Completed   : {}/{} (all_completed={}, all_coprime_gcd_1={}, all_gray_1bit={})",
+                lp.laps_completed, lp.max_laps_configured, lp.all_108_laps_completed,
+                lp.all_108_laps_gcd_coprime_verified, lp.all_108_gray_transitions_1bit);
+            println!("      • Keeper Invariant : {} Admitted / {} Refused (6 Fauna × 108 Laps)",
+                lp.total_keeper_admitted, lp.total_keeper_refused);
+            println!("      • SpherePOP & RL   : ΣHz={} | Beehive Queen Q16={} | Top Prompt={}",
+                lp.cumulative_spherepop_harmonic_sum, lp.final_beehive_queen_consensus_q16, lp.final_yielded_prompt_id);
+            println!("      • 108-Lap Seal     : {}", lp.chain_sha256_seal);
+            println!("      • Sacred Milestone Laps:");
+            for m in &lp.milestone_laps {
+                println!(
+                    "          - Lap #{:>3}/108 | {:<8} | adm={:>3} | gray=0x{:02x} (Δ={}b) | gcd=1:{} | `{}`={}Hz | {} | sha={}...",
+                    m.lap_number, m.gaia_weather, m.keeper_admitted_cumulative,
+                    m.gray_code_word, m.gray_changed_bits_from_prev, m.gcd_is_one,
+                    m.sphere_do_expr, m.sphere_do_eval_hz, m.beehive_top_prompt_id, &m.lap_sha256_prefix[..10]
+                );
+            }
+
+            if launch_after {
+                println!("\n  🚀 Launching 360° Machine-S-UN~unity Glassdoor + 108-Lap Playground Sim in Browser...");
+                let _ = Command::new("open").arg(&html_engine).status();
+            }
+            if play_after {
+                println!("  ▶ Playing {} through the current system output (`afplay`)...", sig.wav_path);
+                play_file(&sig.wav_path);
             }
         }
         "triad" | "triad-feed" | "esp32" => {
