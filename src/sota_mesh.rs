@@ -393,6 +393,8 @@ pub enum SynthTrack {
     HeimleidNordicOdinOmni,
     /// `Desert Psy Rock :: Kyuss (Sky Valley Fuzz) × Plasma (Liquid Space Echo) × Cosmic Flow (bSYE6wTDM_Y) · Procedural Spatial Quant65k+`.
     DesertPsyRockKyussPlasma,
+    /// `Gui Boratto — Beautiful Life (Chromophobia · Kompakt 2007 · YFoJM2tTFlY · 125 BPM Melodic Techno / Warm Analog Arpeggio · Luciana Villanova Vocal Formant · Quant65k+)`.
+    GuiBorattoBeautifulLife,
 }
 
 impl SynthTrack {
@@ -420,6 +422,8 @@ impl SynthTrack {
             | "yawning-man" | "somali-yacht-club" | "my-sleeping-karma" | "dj-agent" => {
                 Self::DesertPsyRockKyussPlasma
             }
+            "gui-boratto" | "boratto" | "beautiful-life" | "chromophobia" | "yfojm2ttfly"
+            | "kompakt" => Self::GuiBorattoBeautifulLife,
             _ => Self::FutureWeRemember,
         }
     }
@@ -446,6 +450,9 @@ impl SynthTrack {
             }
             Self::DesertPsyRockKyussPlasma => {
                 "Desert Psy Rock :: Kyuss (Sky Valley C-Standard Fuzz) × Plasma (Liquid Space Echo) × Cosmic Flow (bSYE6wTDM_Y) · Procedural Spatial Quant65k+"
+            }
+            Self::GuiBorattoBeautifulLife => {
+                "Gui Boratto — Beautiful Life (Chromophobia · YFoJM2tTFlY · 125 BPM Warm Analog Synth Arpeggio & Luminous Vocal Formant · Quant65k+)"
             }
         }
     }
@@ -1123,6 +1130,80 @@ pub fn render_wav_track_seeded(
                         + fifike_r);
                 (l, r)
             }
+            SynthTrack::GuiBorattoBeautifulLife => {
+                // 125 BPM (25/12 Hz beat = 2.0833333 Hz) Chromophobia (Kompakt, 2007)
+                // Chord progression: Am -> F -> C -> G ("Looking back over my shoulder... 'Cause it's such a beautiful life")
+                let tau = std::f32::consts::TAU;
+                let beat_hz = 125.0f32 / 60.0f32;
+                let beat_pos = t * beat_hz;
+                let beat_frac = beat_pos.fract();
+                let bar_idx = ((beat_pos / 4.0) as usize) % 4;
+
+                // Four-on-the-floor warm analog kick drum
+                let kick_freq = 52.0 + 95.0 * (-beat_frac * 22.0).exp();
+                let kick_env = (-beat_frac * 9.5).exp();
+                let kick = (tau * kick_freq * beat_frac).sin() * kick_env * 0.34;
+
+                // Crisp 16th-note Kompakt shaker / hi-hat groove
+                let sixteenth_pos = (beat_pos * 4.0).fract();
+                let hat_env = (-sixteenth_pos * 28.0).exp();
+                let hat = ((tau * 7400.0 * t).sin() * 0.5 + (tau * 10800.0 * t).cos() * 0.5)
+                    * hat_env
+                    * 0.06;
+
+                // Cascading 16th-note analog sawtooth/square arpeggio across Am -> F -> C -> G
+                let arp_notes: [[f32; 4]; 4] = [
+                    [220.00, 261.63, 329.63, 440.00], // Am (A3, C4, E4, A4)
+                    [174.61, 220.00, 261.63, 349.23], // F  (F3, A3, C4, F4)
+                    [261.63, 329.63, 392.00, 523.25], // C  (C4, E4, G4, C5)
+                    [196.00, 246.94, 293.66, 392.00], // G  (G3, B3, D4, G4)
+                ];
+                let step_16 = ((beat_pos * 4.0) as usize) % 4;
+                let arp_f = arp_notes[bar_idx][step_16];
+                let arp_env = (-sixteenth_pos * 5.5).exp();
+                let arp_saw_l = ((tau * arp_f * t).sin()
+                    + 0.5 * (tau * arp_f * 2.0 * t).sin()
+                    + 0.25 * (tau * arp_f * 3.0 * t).sin())
+                    * arp_env
+                    * 0.22;
+                let arp_saw_r = ((tau * (arp_f * 1.003) * t).cos()
+                    + 0.5 * (tau * (arp_f * 2.003) * t).sin()
+                    + 0.25 * (tau * (arp_f * 3.003) * t).cos())
+                    * arp_env
+                    * 0.22;
+
+                // Warm analog Moog-style bassline on root notes (A1=55Hz, F1=43.65Hz, C2=65.41Hz, G1=49.00Hz)
+                let bass_roots = [110.00f32, 87.31, 130.81, 98.00];
+                let bass_f = bass_roots[bar_idx];
+                let offbeat_env = (-(beat_frac - 0.5).abs() * 7.0).exp();
+                let bass = ((tau * bass_f * t).sin() + 0.4 * (tau * bass_f * 2.0 * t).tanh())
+                    * offbeat_env
+                    * 0.24;
+
+                // Luciana Villanova luminous vocal-formant pad ("It's such a beautiful life" · 432 Hz / 528 Hz)
+                let vocal_pad_l = ((tau * 432.0 * t).sin() + 0.6 * (tau * 528.0 * t).sin())
+                    * (0.5 + 0.5 * (tau * 0.25 * t).sin())
+                    * 0.14;
+                let vocal_pad_r = ((tau * 436.0 * t).cos() + 0.6 * (tau * 528.0 * t).cos())
+                    * (0.5 + 0.5 * (tau * 0.25 * t).cos())
+                    * 0.14;
+
+                let (q65_l, q65_r) = quant65k.sample_realtime_48k(frame_idx, arp_f);
+                let (fifike_l, fifike_r) =
+                    crate::wupz_mlx_quant::sample_fifike_purr_and_mlx_harmonic(t);
+                let fade = if t < 0.8 {
+                    0.5 * (1.0 - (std::f32::consts::PI * t / 0.8).cos())
+                } else if t > (duration_seconds - 1.2).max(0.9) {
+                    let rem = (duration_seconds - t).max(0.0);
+                    0.5 * (1.0 - (std::f32::consts::PI * rem / 1.2).cos())
+                } else {
+                    1.0
+                };
+
+                let l = fade * (kick + bass + arp_saw_l + vocal_pad_l + hat + 0.14 * q65_l + fifike_l);
+                let r = fade * (kick + bass + arp_saw_r + vocal_pad_r + hat + 0.14 * q65_r + fifike_r);
+                (l, r)
+            }
         };
 
         let (eq_l, eq_r) = eq.apply_stereo(raw_l, raw_r);
@@ -1593,5 +1674,39 @@ mod tests {
         let _ = std::fs::remove_file(wav_kyuss);
         let _ = std::fs::remove_file(wav_plasma);
         let _ = std::fs::remove_dir_all(signs_dir);
+    }
+
+    #[test]
+    fn gui_boratto_beautiful_life_renders_and_emits_quant_music_signature() {
+        assert_eq!(
+            SynthTrack::from_name("gui-boratto"),
+            SynthTrack::GuiBorattoBeautifulLife
+        );
+        assert_eq!(
+            SynthTrack::from_name("beautiful-life"),
+            SynthTrack::GuiBorattoBeautifulLife
+        );
+        assert_eq!(
+            SynthTrack::from_name("yfojm2ttfly"),
+            SynthTrack::GuiBorattoBeautifulLife
+        );
+        let dir = std::env::temp_dir();
+        let wav_path = dir.join("gui-boratto-beautiful-life-yfojm2ttfly.wav");
+        let signs_dir = Path::new("/Users/peterlodri/workspace/peterlodri-sec/music-quant-signs/signs");
+        let (sum, sig) = render_and_sign_dj_agent_track(
+            "gui-boratto-beautiful-life-chromophobia-yfojm2ttfly",
+            SynthTrack::GuiBorattoBeautifulLife,
+            4.0,
+            crate::quant65k::N_PLUS_1_ODIN_LAYER,
+            MultiBluetoothTopology::FullConstellationWall,
+            &wav_path,
+            signs_dir,
+        )
+        .unwrap();
+        assert!(sum.peak_left > 0.05 && sum.peak_left <= 1.0);
+        assert!(sum.peak_right > 0.05 && sum.peak_right <= 1.0);
+        assert!(sig.n_plus_1_odin_layer_active);
+        assert!(Path::new(&sig.signature_path).exists());
+        let _ = std::fs::remove_file(wav_path);
     }
 }
